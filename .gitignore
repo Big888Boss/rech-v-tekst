@@ -27,3 +27,4 @@ chunk_*.txt
 .DS_Store
 __pycache__/
 work/
+dist/
