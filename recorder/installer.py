@@ -537,4 +537,3 @@ class InstallerManager:
 # Global singleton installer manager
 INSTALLER = InstallerManager()
 atexit.register(INSTALLER.cancel_install)
-
