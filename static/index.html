@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="__CSRF_TOKEN__">
+  <title>Речь в текст — Локальная запись и транскрибация</title>
+  <link rel="stylesheet" href="/static/tokens.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Перейти к основному содержимому</a>
+
+  <div class="app-shell">
+    <!-- Header with single primary action -->
+    <header class="app-header" role="banner">
+      <div class="header-brand">
+        <div class="brand-title-row">
+          <h1 class="page-title">Речь в текст</h1>
+          <div class="system-status-badge" id="systemStatusBadge" role="status" aria-live="polite">
+            <span class="status-symbol" aria-hidden="true">●</span>
+            <span class="status-label" id="systemStatusText">Загрузка данных...</span>
+          </div>
+          <span class="header-sync-time" id="lastSyncTime" aria-live="off" hidden></span>
+        </div>
+        <p class="app-subtitle">Локальная запись встреч и вебинаров, извлечение звука из видео, распознавание речи и умный конспект.</p>
+      </div>
+      <div class="header-actions">
+        <button id="btnPrimaryStart" class="btn btn-primary" type="button" disabled data-tooltip="Начать запись аудио с выбранного источника" data-tooltip-disabled="Запись недоступна: выберите доступное аудиоустройство и дождитесь готовности сервера">
+          <span class="btn-icon" aria-hidden="true">⏺</span>
+          <span id="btnPrimaryStartLabel">Начать запись</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="mainContent" class="app-main" role="main">
+      <!-- Network & Server Status Banner (Offline / Stale) -->
+      <div id="connectionBanner" class="banner banner-warning" role="alert" hidden>
+        <span class="banner-icon" aria-hidden="true">⚠️</span>
+        <span id="connectionBannerText" class="banner-text">Соединение с локальным сервером прервано.</span>
+      </div>
+
+      <!-- Welcome, Visual Route & Quick Help Bar -->
+      <section class="section-card welcome-bar" aria-labelledby="welcomeHeading">
+        <div class="welcome-header">
+          <div class="welcome-intro">
+            <h2 id="welcomeHeading" class="welcome-title">Рабочий маршрут обработки речи</h2>
+            <p class="welcome-desc">
+              Все аудиозаписи и текст сохраняются локально на вашем компьютере.
+            </p>
+          </div>
+          <div class="welcome-actions">
+            <button id="btnOpenSettings" class="btn btn-secondary" type="button" aria-haspopup="dialog" data-tooltip="Открыть настройки приложения, диагностику сценариев и управление Whisper" data-tooltip-disabled="Настройки доступны всегда">
+              <span aria-hidden="true">⚙️</span>
+              <span>Настройки</span>
+            </button>
+            <button id="btnToggleHelp" class="btn btn-secondary" type="button" aria-expanded="false" aria-controls="helpPanel" data-tooltip="Открыть путеводитель по возможностям и шагам работы" data-tooltip-disabled="Справочник доступен всегда">
+              <span aria-hidden="true">📖</span>
+              <span>Возможности и помощь</span>
+            </button>
+            <a id="btnOpenFeaturesDoc" href="/static/FEATURES.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полное руководство возможностей в отдельной вкладке">
+              <span aria-hidden="true">📖</span>
+              <span>Полное руководство ↗</span>
+            </a>
+            <button id="btnToggleHintsMode" class="btn btn-quiet" type="button" aria-pressed="false" data-tooltip="Включить безопасный режим подсказок: нажатие на любую кнопку покажет её описание без выполнения действия" data-tooltip-disabled="Режим подсказок доступен всегда">
+              <span aria-hidden="true">💡</span>
+              <span id="btnToggleHintsModeText">Режим подсказок: выкл</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Route Strip: 3 Steps with Requirements and Conditions -->
+        <div class="route-strip" role="region" aria-label="Этапы работы">
+          <div class="route-step" data-step="1">
+            <div class="route-step-badge">Шаг 1</div>
+            <div class="route-step-body">
+              <div class="route-step-title">Запись или импорт видео</div>
+              <div class="route-step-text">Системный звук (BlackHole), микрофон или готовый видео/аудио файл. Для импорта требуются FFmpeg и ffprobe.</div>
+            </div>
+          </div>
+          <div class="route-step-arrow" aria-hidden="true">→</div>
+          <div class="route-step" data-step="2">
+            <div class="route-step-badge">Шаг 2</div>
+            <div class="route-step-body">
+              <div class="route-step-title">Распознавание речи</div>
+              <div class="route-step-text">Распознавание на компьютере. Требуются whisper.cpp и установленная модель.</div>
+            </div>
+          </div>
+          <div class="route-step-arrow" aria-hidden="true">→</div>
+          <div class="route-step" data-step="3">
+            <div class="route-step-badge">Шаг 3</div>
+            <div class="route-step-body">
+              <div class="route-step-title">Текст, субтитры и конспект</div>
+              <div class="route-step-text">Экспорт в 5 форматах (TXT, Markdown, SRT, VTT, JSON) или структурированный конспект через Claude CLI.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible In-Page Help Panel with Embedded Full Manual -->
+        <div id="helpPanel" class="help-panel" hidden>
+          <div class="help-panel-header">
+            <h3 class="help-panel-title">Полное руководство и возможности (FEATURES.md)</h3>
+            <div class="help-panel-actions">
+              <a id="btnDownloadFeaturesDoc" href="/static/FEATURES.md" class="btn btn-quiet" download="FEATURES.md" data-tooltip="Скачать полный файл документации FEATURES.md">⬇ Скачать FEATURES.md</a>
+              <a id="btnOpenFeaturesDocPanel" href="/static/FEATURES.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полную документацию в новой вкладке">Открыть в новой вкладке ↗</a>
+              <button id="btnCloseHelpPanel" class="btn btn-quiet" type="button" aria-label="Свернуть справочник" data-tooltip="Свернуть панель справочника">✕ Свернуть</button>
+            </div>
+          </div>
+          <div id="helpDocContainer" class="help-doc-container" aria-live="polite">
+            <div id="helpDocLoading" class="help-doc-status">Загрузка полного текста руководства из FEATURES.md...</div>
+            <div id="helpDocError" class="banner banner-danger" role="alert" hidden>
+              <span id="helpDocErrorText">Не удалось загрузить текст руководства. Вы можете открыть или скачать файл по ссылкам выше.</span>
+              <button id="btnRetryHelpDoc" class="btn btn-secondary btn-sm" type="button" data-tooltip="Повторить попытку загрузки руководства FEATURES.md">Повторить загрузку</button>
+            </div>
+            <div id="helpDocContent" class="help-doc-content" hidden></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- System Health & Preflight Bar -->
+      <section class="section-card preflight-bar" aria-labelledby="preflightHeading">
+        <div class="preflight-header">
+          <h2 id="preflightHeading" class="section-title">Аудио-источник и диагностика</h2>
+          <div class="disk-quota" id="diskQuotaDisplay">
+            <span class="metric-label">Свободно на диске:</span>
+            <span class="metric-value font-mono" id="diskFreeVal">—</span>
+            <span class="metric-sub" id="diskHoursVal">(~— ч записи)</span>
+          </div>
+        </div>
+
+        <div class="preflight-controls">
+          <div class="form-group">
+            <label for="sourceSelect" class="form-label">Источник записи</label>
+            <select id="sourceSelect" class="form-select">
+              <option value="zoom" selected>Zoom / Системный звук (BlackHole)</option>
+              <option value="mic">Микрофон (Офлайн-встреча)</option>
+              <option value="upload">Готовый аудио/видео файл (Импорт)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="deviceSelectGroup">
+            <label for="deviceSelect" class="form-label">Устройство входа</label>
+            <select id="deviceSelect" class="form-select">
+              <option value="">Поиск устройств...</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="sessionTitleGroup">
+            <label for="sessionTitleInput" class="form-label">Название вебинара / встречи</label>
+            <input id="sessionTitleInput" type="text" class="form-input" placeholder="Название (необязательно)" maxlength="100">
+          </div>
+
+          <div class="form-group" id="languageSelectGroup">
+            <label for="languageSelect" class="form-label">Язык речи</label>
+            <select id="languageSelect" class="form-select">
+              <option value="ru" selected>Русский</option>
+              <option value="en">Английский</option>
+              <option value="auto">Автоопределение</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button id="btnPreflightTest" class="btn btn-secondary" type="button" data-tooltip="Запустить 2-секундный аппаратный замер уровня звука выбранного устройства" data-tooltip-disabled="Тест уровня недоступен: устройство не выбрано или выполняется операция">
+              <span aria-hidden="true">🔎</span>
+              <span>Проверить уровень (2 сек)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Preflight Result Bar -->
+        <div id="preflightResult" class="preflight-status" role="status" aria-live="polite">
+          <span class="status-symbol" id="preflightSymbol" aria-hidden="true">○</span>
+          <span id="preflightMessage" class="status-desc">Нажмите «Проверить уровень» для аппаратного теста звука.</span>
+        </div>
+
+        <!-- File Upload Area (Shown when source is 'upload') -->
+        <div id="uploadContainer" class="upload-container" hidden>
+          <div id="uploadDependencyWarning" class="banner banner-warning" role="status" aria-live="polite" hidden>
+            <span class="status-symbol" aria-hidden="true">⚠️</span>
+            <div class="upload-prereq-content">
+              <span id="uploadDependencyMessage">Для импорта аудио/видео файлов требуются утилиты: FFmpeg и ffprobe.</span>
+              <span id="uploadDependencyRemediation" class="upload-prereq-remedy control-help-text"></span>
+            </div>
+          </div>
+          <div class="form-group file-upload-group">
+            <label for="audioFileInput" class="form-label">Выберите аудио/видео файл для импорта</label>
+            <input id="audioFileInput" type="file" class="form-file" accept="audio/*,video/*,.m4a,.mp3,.wav,.mp4,.mov,.aac,.caf,.aif,.aiff,.flac,.ogg">
+          </div>
+          <div id="uploadProgressContainer" class="progress-block" hidden>
+            <div class="progress-bar-wrapper">
+              <progress id="uploadProgressBar" value="0" max="100" class="progress-bar" aria-label="Прогресс загрузки файла"></progress>
+            </div>
+            <span id="uploadProgressText" class="progress-text" aria-live="polite">Загрузка: 0%</span>
+          </div>
+          <div id="uploadError" class="banner banner-danger" role="alert" tabindex="-1" hidden></div>
+          <div class="upload-actions">
+            <button id="btnUploadSubmit" class="btn btn-secondary" type="button" disabled data-tooltip="Загрузить выбранный аудио/видео файл на сервер и поставить в очередь обработки" data-tooltip-disabled="Импорт недоступен: выберите файл и убедитесь в наличии FFmpeg/ffprobe">Импортировать файл</button>
+            <div id="uploadRetryContainer" class="upload-retry-container" hidden>
+              <button id="btnUploadRetry" class="btn btn-secondary" type="button" aria-describedby="uploadRetryNote" data-tooltip="Повторить отправку файла после устранения сбоя" data-tooltip-disabled="Повтор недоступен: устраните сбой сети или дождитесь завершения текущей операции">Повторить попытку</button>
+              <span id="uploadRetryNote" class="control-help-text upload-retry-note">Перед повтором проверьте список сессий: файл мог уже сохраниться. Повторная отправка может создать копию.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Work Region (Recording / Transcription in progress) -->
+      <section id="activeWorkSection" class="section-card active-work-card" aria-labelledby="activeWorkHeading" hidden>
+        <div class="active-header">
+          <div class="active-title-group">
+            <span class="status-symbol working-symbol" aria-hidden="true">◐</span>
+            <h2 id="activeWorkHeading" class="section-title">Текущая операция</h2>
+          </div>
+          <div class="active-controls">
+            <button id="btnStopCapture" class="btn btn-danger" type="button" hidden data-tooltip="Штатно завершить текущую запись: аудиосегменты будут сохранены для обработки" data-tooltip-disabled="Остановка доступна только во время активной записи">Остановить запись</button>
+            <button id="btnCancelProcess" class="btn btn-secondary" type="button" hidden data-tooltip="Прервать текущий процесс распознавания речи" data-tooltip-disabled="Отмена доступна только во время активной обработки">Отменить обработку</button>
+            <span id="activeControlHelp" class="control-help-text" hidden>При остановке сегменты сохраняются на диске и доступны для повторной обработки.</span>
+          </div>
+        </div>
+
+        <div class="active-details">
+          <div class="metric-row">
+            <div class="metric-item">
+              <span class="metric-label">Сессия:</span>
+              <span id="activeSessionId" class="metric-value font-mono">—</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Время работы:</span>
+              <span id="activeElapsed" class="metric-value font-mono">00:00:00</span>
+            </div>
+            <div class="metric-item" id="activeEtaBlock" hidden>
+              <span class="metric-label">Оценка завершения (ETA):</span>
+              <span id="activeEta" class="metric-value font-mono">расчёт...</span>
+            </div>
+          </div>
+
+          <div id="activeProgressBlock" class="progress-block" hidden>
+            <div class="progress-bar-wrapper">
+              <progress id="activeProgressBar" value="0" max="100" class="progress-bar" aria-label="Прогресс распознавания"></progress>
+            </div>
+            <span id="activeProgressLabel" class="progress-text" role="status" aria-live="polite">Обработка кусков...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sessions Library Table (CMP-001, DSH-007) -->
+      <section class="section-card" aria-labelledby="sessionsHeading">
+        <div class="table-header-row">
+          <h2 id="sessionsHeading" class="section-title">Библиотека записей</h2>
+          <div class="table-tools">
+            <input id="sessionFilterInput" type="search" class="form-input search-input" placeholder="Поиск по названию или ID..." aria-label="Поиск по сессиям">
+            <select id="statusFilterSelect" class="form-select status-filter" aria-label="Фильтр по статусу">
+              <option value="all">Все статусы</option>
+              <option value="completed">Готовые</option>
+              <option value="ready">Ожидают обработки</option>
+              <option value="failed">С ошибкой</option>
+              <option value="interrupted">Прерванные</option>
+              <option value="removed">Убранные из очереди</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="whisperModelWarning" class="callout callout-warning whisper-warning-banner" role="status" hidden>
+          <p class="callout-title">⚠️ Движок Whisper или модель не установлены</p>
+          <p id="whisperModelWarningText" class="callout-text">
+            Распознавание на этом компьютере недоступно: требуются <code>whisper-cli</code> в PATH и файл модели в <code>models/</code>.
+          </p>
+        </div>
+
+        <div class="table-container">
+          <table id="sessionsTable" class="data-table" aria-label="Список записей вебинаров">
+            <thead>
+              <tr>
+                <th scope="col" class="th-sortable" aria-sort="none">
+                  <button type="button" class="th-sort-btn" data-sort="session_id" aria-label="Сортировать по названию сессии" data-tooltip="Сортировать записи по названию сессии или ID">
+                    <span>Сессия</span>
+                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+                <th scope="col" class="th-sortable" aria-sort="none">
+                  <button type="button" class="th-sort-btn" data-sort="source_kind" aria-label="Сортировать по источнику" data-tooltip="Сортировать записи по источнику звука (Zoom, микрофон, файл)">
+                    <span>Источник</span>
+                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+                <th scope="col" class="th-sortable" aria-sort="descending">
+                  <button type="button" class="th-sort-btn" data-sort="created_at" aria-label="Сортировать по дате создания" data-tooltip="Сортировать записи по дате и времени создания">
+                    <span>Дата</span>
+                    <span class="sort-indicator" aria-hidden="true">↓</span>
+                  </button>
+                </th>
+                <th scope="col" class="th-sortable numeric-col" aria-sort="none">
+                  <button type="button" class="th-sort-btn" data-sort="total_duration_sec" aria-label="Сортировать по длительности" data-tooltip="Сортировать записи по продолжительности звучания">
+                    <span>Длительность</span>
+                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+                <th scope="col" class="th-sortable" aria-sort="none">
+                  <button type="button" class="th-sort-btn" data-sort="status" aria-label="Сортировать по состоянию" data-tooltip="Сортировать записи по состоянию готовности или наличию ошибок">
+                    <span>Состояние</span>
+                    <span class="sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+                <th scope="col" class="action-col">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="sessionsTableBody" aria-busy="true">
+              <!-- Initial 3 skeleton rows matching 6-column header layout (R04) -->
+              <tr class="skeleton-row" aria-hidden="true">
+                <td><div class="skeleton-pulse">Загрузка данных...</div></td>
+                <td><div class="skeleton-pulse">—</div></td>
+                <td><div class="skeleton-pulse">—</div></td>
+                <td><div class="skeleton-pulse">—</div></td>
+                <td><div class="skeleton-pulse">—</div></td>
+                <td><div class="skeleton-pulse">—</div></td>
+              </tr>
+              <tr class="skeleton-row" aria-hidden="true">
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+              </tr>
+              <tr class="skeleton-row" aria-hidden="true">
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+                <td><div class="skeleton-pulse">&nbsp;</div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="tablePagination" class="table-pagination" hidden>
+          <span id="paginationSummary" class="pagination-summary">Показано 0 из 0</span>
+          <div class="pagination-controls">
+            <button id="btnPrevPage" class="btn btn-quiet" type="button" disabled aria-label="Предыдущая страница" data-tooltip="Перейти на предыдущую страницу списка сессий" data-tooltip-disabled="Вы уже на первой странице списка сессий">← Назад</button>
+            <span id="pageIndicator" class="page-indicator font-mono">1</span>
+            <button id="btnNextPage" class="btn btn-quiet" type="button" disabled aria-label="Следующая страница" data-tooltip="Перейти на следующую страницу списка сессий" data-tooltip-disabled="Вы уже на последней странице списка сессий">Вперёд →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inspector Panel: Transcript & Summary Viewer -->
+      <section id="inspectorSection" class="section-card inspector-card" aria-labelledby="inspectorHeading" hidden>
+        <div class="inspector-header">
+          <div class="inspector-title-block">
+            <h2 id="inspectorHeading" class="section-title">Просмотр: <span id="inspectorSessionTitle" class="font-mono">—</span></h2>
+            <span id="inspectorWordCount" class="badge-meta font-mono">0 слов</span>
+          </div>
+          <div class="inspector-actions">
+            <div class="dropdown-wrapper">
+              <button id="btnExportMenu" class="btn btn-secondary" type="button" aria-haspopup="true" aria-expanded="false" data-tooltip="Открыть меню выбора формата экспорта текущей расшифровки">
+                <span>Экспорт</span>
+                <span aria-hidden="true">▾</span>
+              </button>
+              <div id="exportDropdown" class="dropdown-menu" hidden role="menu">
+                <a id="exportTxtLink" href="#" class="dropdown-item" role="menuitem" download data-tooltip="Скачать чистый распознанный текст без таймкодов (.txt)">Текст (.txt)</a>
+                <a id="exportMdLink" href="#" class="dropdown-item" role="menuitem" download data-tooltip="Скачать структурированный текст или конспект в формате Markdown (.md)">Markdown (.md)</a>
+                <a id="exportSrtLink" href="#" class="dropdown-item" role="menuitem" download data-tooltip="Скачать субтитры формата SubRip с таймкодами (.srt) для видеоплееров">Субтитры SRT (.srt)</a>
+                <a id="exportVttLink" href="#" class="dropdown-item" role="menuitem" download data-tooltip="Скачать веб-субтитры WebVTT (.vtt) для браузеров и онлайн-курсов">Субтитры VTT (.vtt)</a>
+                <a id="exportJsonLink" href="#" class="dropdown-item" role="menuitem" download data-tooltip="Скачать файл сегментов расшифровки с таймкодами (.json)">JSON (.json)</a>
+              </div>
+            </div>
+
+            <button id="btnRequestSummary" class="btn btn-secondary" type="button" data-tooltip="Открыть диалог формирования краткого конспекта вебинара через ИИ" data-tooltip-disabled="Создание конспекта недоступно: сессия ещё не расшифрована или сервер занят">
+              <span>Сделать конспект</span>
+            </button>
+
+            <button id="btnCloseInspector" class="btn btn-quiet" type="button" aria-label="Закрыть панель просмотра" data-tooltip="Закрыть панель просмотра и вернуться к библиотеке записей">✕ Закрыть</button>
+          </div>
+        </div>
+
+        <div id="inspectorErrorBanner" class="callout callout-danger inspector-error-banner" role="alert" tabindex="0" hidden>
+          <p class="callout-title">⚠️ Ошибка сессии</p>
+          <p id="inspectorErrorText" class="callout-text font-mono"></p>
+        </div>
+
+        <div class="inspector-tabs" role="tablist">
+          <button id="tabTranscript" class="tab-btn active" role="tab" aria-selected="true" aria-controls="panelTranscript" data-tooltip="Показать подробную расшифровку речи с таймкодами каждого фрагмента">Расшифровка с таймкодами</button>
+          <button id="tabSummary" class="tab-btn" role="tab" aria-selected="false" aria-controls="panelSummary" data-tooltip="Показать структурированный конспект (резюме, ключевые темы, задачи)">Конспект (Markdown)</button>
+        </div>
+
+        <div id="panelTranscript" class="tab-panel" role="tabpanel" aria-labelledby="tabTranscript">
+          <div class="search-bar-inline">
+            <input id="transcriptSearchInput" type="search" class="form-input" placeholder="Поиск в расшифровке..." aria-label="Поиск в расшифровке">
+          </div>
+          <div id="transcriptView" class="transcript-scroll-area">
+            <!-- Transcript entries rendered dynamically -->
+          </div>
+        </div>
+
+        <div id="panelSummary" class="tab-panel" role="tabpanel" aria-labelledby="tabSummary" hidden>
+          <div id="summaryView" class="summary-content font-mono">
+            <p class="empty-cell">Конспект ещё не составлен. Нажмите «Сделать конспект».</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Operational Log Console -->
+      <section class="section-card log-card" aria-labelledby="logHeading">
+        <div class="log-header">
+          <h2 id="logHeading" class="section-title">Журнал операций</h2>
+          <button id="btnClearLog" class="btn btn-quiet" type="button" data-tooltip="Очистить текстовое поле текущего журнала событий в интерфейсе">Очистить вид</button>
+        </div>
+        <pre id="logConsole" class="log-console font-mono" role="log" aria-live="polite">Ожидание команд...</pre>
+      </section>
+    </main>
+
+    <!-- Dialog: Summary Options & External Transmission Opt-in (R09: aria-describedby added) -->
+    <dialog id="summaryModal" class="app-dialog" aria-labelledby="summaryModalTitle" aria-describedby="summaryModalDesc">
+      <div class="dialog-content">
+        <h3 id="summaryModalTitle" class="dialog-title">Создание конспекта</h3>
+        <p id="summaryModalDesc" class="dialog-desc">
+          Конспект формируется на основе распознанного текста вебинара с помощью изолированного CLI Claude.
+          Проверьте параметры и подтвердите согласие на передачу.
+        </p>
+
+        <form id="summaryForm" method="dialog">
+          <div class="form-group">
+            <label for="summaryTemplateSelect" class="form-label">Шаблон структуры</label>
+            <select id="summaryTemplateSelect" class="form-select">
+              <option value="meeting" selected>Встреча / Вебинар (Резюме, Темы, Решения, Задачи)</option>
+              <option value="lecture">Лекция (Понятия, Логика, Примеры, Вопросы)</option>
+              <option value="interview">Интервью (Позиция, Аргументы, Выводы)</option>
+              <option value="action_items">Только задачи и поручения (Action Items)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="summaryProviderSelect" class="form-label">Провайдер</label>
+            <select id="summaryProviderSelect" class="form-select">
+              <option value="none">Локально (без ИИ / конфиденциально)</option>
+              <option value="claude" selected>Claude CLI (с отключёнными инструментами --tools "")</option>
+              <option value="codex" disabled>Codex CLI (отключено: sandbox разрешает чтение файлов)</option>
+            </select>
+          </div>
+
+          <div class="callout callout-warning">
+            <p class="callout-title">⚠️ Предупреждение о конфиденциальности</p>
+            <p class="callout-text">
+              Использование внешнего CLI передаёт текст расшифровки выбранному сервису.
+              Флаг <code>--tools ""</code> блокирует вызов локальных инструментов, однако режим <code>--bare</code> требует явной конфигурации API-ключа.
+            </p>
+          </div>
+
+          <div class="form-checkbox-container">
+            <label for="summaryOptInCheck" class="form-checkbox-label">
+              <input type="checkbox" id="summaryOptInCheck" class="form-checkbox">
+              <span class="checkbox-label">Подтверждаю отправку расшифровки для составления конспекта</span>
+            </label>
+          </div>
+
+          <div class="dialog-actions-container">
+            <div class="dialog-actions">
+              <button id="btnCancelSummary" class="btn btn-secondary" type="button" aria-describedby="cancelSummaryHint" data-tooltip="Закрыть окно генерации конспекта без отправки запроса">Отмена</button>
+              <button id="btnSubmitSummary" class="btn btn-primary" type="submit" disabled aria-describedby="submitSummaryHint" data-tooltip="Запустить генерацию структурированного конспекта по выбранному шаблону" data-tooltip-disabled="Для запуска подтвердите согласие на отправку текста расшифровки">Сгенерировать конспект</button>
+            </div>
+            <div class="dialog-actions-hints">
+              <span id="cancelSummaryHint" class="dialog-action-hint"><strong>«Отмена»:</strong> закрыть окно без отправки запроса.</span>
+              <span id="submitSummaryHint" class="dialog-action-hint"><strong>«Сгенерировать конспект»:</strong> требует подтверждения согласия выше; отправляет расшифровку в Claude CLI.</span>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div id="dialogTooltip" class="app-floating-tooltip" role="tooltip" aria-hidden="true"></div>
+    </dialog>
+
+    <!-- Dialog: Queue Removal Confirmation -->
+    <dialog id="queueConfirmModal" class="app-dialog" aria-labelledby="queueConfirmTitle" aria-describedby="queueConfirmDesc">
+      <div class="dialog-content">
+        <h3 id="queueConfirmTitle" class="dialog-title">Убрать запись из очереди</h3>
+        <p id="queueConfirmDesc" class="dialog-desc">
+          Запись <strong id="queueConfirmSessionName">—</strong> будет исключена из активной очереди ожидания.
+        </p>
+        <div class="callout callout-info">
+          <p class="callout-title">ℹ️ Исходные файлы сохраняются</p>
+          <p class="callout-text">
+            Исходный аудиофайл, фрагменты и расшифровки <strong>остаются на диске</strong> и не удаляются.
+            Вы сможете вернуть запись в очередь в любой момент, выбрав фильтр «Убранные из очереди».
+          </p>
+        </div>
+
+        <form id="queueConfirmForm" method="dialog">
+          <div class="dialog-actions-container">
+            <div class="dialog-actions">
+              <button id="btnCancelQueueRemove" class="btn btn-secondary" type="button" aria-describedby="cancelQueueHint" data-tooltip="Оставить запись в очереди без изменений">Отмена</button>
+              <button id="btnConfirmQueueRemove" class="btn btn-danger" type="submit" aria-describedby="confirmQueueHint" data-tooltip="Исключить запись из активной очереди обработки">Убрать из очереди</button>
+            </div>
+            <div class="dialog-actions-hints">
+              <span id="cancelQueueHint" class="dialog-action-hint"><strong>«Отмена»:</strong> закрыть окно и оставить запись в очереди.</span>
+              <span id="confirmQueueHint" class="dialog-action-hint"><strong>«Убрать из очереди»:</strong> исключить из очереди с сохранением всех файлов на диске.</span>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div id="queueDialogTooltip" class="app-floating-tooltip" role="tooltip" aria-hidden="true"></div>
+    </dialog>
+
+    <!-- Dialog: Application Settings & Scenario Readiness -->
+    <dialog id="settingsModal" class="app-dialog settings-dialog" aria-labelledby="settingsDialogTitle">
+      <div class="dialog-content settings-dialog-content">
+        <div class="settings-dialog-header">
+          <h3 id="settingsDialogTitle" class="dialog-title">⚙️ Настройки и готовность сценариев</h3>
+          <button id="btnCloseSettingsModal" class="btn btn-quiet" type="button" aria-label="Закрыть настройки" data-tooltip="Закрыть диалог настроек">✕</button>
+        </div>
+
+        <!-- Scenario Readiness Overview -->
+        <div class="settings-section">
+          <h4 class="settings-section-title">Готовность сценариев работы</h4>
+          <div class="readiness-grid">
+            <div class="readiness-card" id="cardScenarioImport">
+              <div class="readiness-card-header">
+                <span class="readiness-icon">📁</span>
+                <span class="readiness-title">Импорт медиафайлов</span>
+                <span class="readiness-badge" id="badgeScenarioImport">Проверка...</span>
+              </div>
+              <div class="readiness-card-desc" id="descScenarioImport">FFmpeg и ffprobe для конвертации аудио и видео</div>
+            </div>
+
+            <div class="readiness-card" id="cardScenarioMic">
+              <div class="readiness-card-header">
+                <span class="readiness-icon">🎙️</span>
+                <span class="readiness-title">Запись микрофона</span>
+                <span class="readiness-badge" id="badgeScenarioMic">Проверка...</span>
+              </div>
+              <div class="readiness-card-desc" id="descScenarioMic">Встроенный или внешний микрофон</div>
+            </div>
+
+            <div class="readiness-card" id="cardScenarioSystem">
+              <div class="readiness-card-header">
+                <span class="readiness-icon">🖥️</span>
+                <span class="readiness-title">Системный звук</span>
+                <span class="readiness-badge" id="badgeScenarioSystem">Проверка...</span>
+              </div>
+              <div class="readiness-card-desc" id="descScenarioSystem">BlackHole 2ch для записи вебинаров и звонков</div>
+            </div>
+
+            <div class="readiness-card" id="cardScenarioTranscribe">
+              <div class="readiness-card-header">
+                <span class="readiness-icon">⚡</span>
+                <span class="readiness-title">Распознавание речи</span>
+                <span class="readiness-badge" id="badgeScenarioTranscribe">Проверка...</span>
+              </div>
+              <div class="readiness-card-desc" id="descScenarioTranscribe">whisper.cpp + модель large-v3-turbo</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Engine & Model Details -->
+        <div class="settings-section">
+          <h4 class="settings-section-title">Компоненты распознавания</h4>
+          <div class="settings-info-box" id="engineInfoBox">
+            <div class="info-row">
+              <span class="info-label">Движок Whisper:</span>
+              <span class="info-value" id="infoWhisperVersion">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Бинарный файл:</span>
+              <span class="info-value code-font" id="infoWhisperPath">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Файл модели:</span>
+              <span class="info-value code-font" id="infoModelPath">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Размер модели:</span>
+              <span class="info-value" id="infoModelSize">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Статус модели:</span>
+              <span class="info-value" id="infoModelStatus">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Свободно на диске:</span>
+              <span class="info-value" id="infoDiskSpace">—</span>
+            </div>
+          </div>
+
+          <!-- Installer Box -->
+          <div id="installerBox" class="installer-box" hidden>
+            <div class="installer-header">
+              <span class="installer-title">Фоновая установка компонентов Whisper (v1.9.3 + large-v3-turbo)</span>
+            </div>
+            <p class="installer-desc" id="installerMessage">Загрузка проверенной модели (~1.6 ГБ) и сборка whisper-cli с Metal.</p>
+            <div class="installer-progress-container" id="installerProgressContainer" hidden>
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="installerProgressBar" style="width: 0%"></div>
+              </div>
+              <div class="installer-progress-meta">
+                <span id="installerProgressPercent">0%</span>
+                <span id="installerProgressEta">—</span>
+              </div>
+            </div>
+            <div class="installer-actions">
+              <button id="btnStartInstall" class="btn btn-secondary btn-sm" type="button" data-tooltip="Запустить скачивание официальной модели large-v3-turbo и сборку whisper-cli">
+                Установить компоненты (~1.6 ГБ)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Configuration Form -->
+        <form id="settingsForm" class="settings-form">
+          <div class="settings-section">
+            <h4 class="settings-section-title">Параметры и пути</h4>
+
+            <div class="form-group">
+              <label for="inputWhisperBin" class="form-label">
+                Пользовательский путь к whisper-cli:
+                <span class="env-badge" id="envBadgeWhisperBin" hidden>переопределено переменной WHISPER_BIN</span>
+              </label>
+              <input type="text" id="inputWhisperBin" class="form-input code-font" placeholder="По умолчанию: work/bin/whisper-cli">
+              <div class="form-hint">Оставьте пустым для использования встроенного бинарного файла проекта.</div>
+            </div>
+
+            <div class="form-group">
+              <label for="inputModelPath" class="form-label">
+                Пользовательский путь к модели:
+                <span class="env-badge" id="envBadgeModelPath" hidden>переопределено переменной WHISPER_MODEL_PATH</span>
+              </label>
+              <input type="text" id="inputModelPath" class="form-input code-font" placeholder="По умолчанию: models/ggml-large-v3-turbo.bin">
+              <div class="form-hint">Поддерживается официальная проверенная модель large-v3-turbo (~1.6 ГБ, SHA-256).</div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="selectLanguage" class="form-label">
+                  Язык распознавания:
+                  <span class="env-badge" id="envBadgeLanguage" hidden>переопределено переменной WHISPER_LANG</span>
+                </label>
+                <select id="selectLanguage" class="form-select">
+                  <option value="ru">Русский (ru)</option>
+                  <option value="en">Английский (en)</option>
+                  <option value="auto">Автоопределение (auto)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Аппаратное ускорение:
+                  <span class="env-badge" id="envBadgeNoGpu" hidden>переопределено переменной WHISPER_NO_GPU</span>
+                </label>
+                <label class="form-checkbox-label">
+                  <input type="checkbox" id="checkGpuEnabled" class="form-checkbox" checked>
+                  <span class="checkbox-label">Использовать ускорение Metal GPU</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="inputGpuThreads" class="form-label">
+                  Потоки GPU:
+                  <span class="env-badge" id="envBadgeThreads" hidden>переопределено WHISPER_THREADS</span>
+                </label>
+                <input type="number" id="inputGpuThreads" class="form-input" min="1" max="32" value="4">
+              </div>
+
+              <div class="form-group">
+                <label for="inputCpuThreads" class="form-label">
+                  Потоки CPU:
+                  <span class="env-badge" id="envBadgeCpuThreads" hidden>переопределено WHISPER_CPU_THREADS</span>
+                </label>
+                <input type="number" id="inputCpuThreads" class="form-input" min="1" max="32" value="2">
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings Status Message Banner -->
+          <div id="settingsAlert" class="banner banner-info" role="alert" hidden>
+            <span id="settingsAlertText"></span>
+          </div>
+
+          <div class="dialog-actions-container">
+            <div class="dialog-actions">
+              <button id="btnRecheckSettings" class="btn btn-secondary" type="button" data-tooltip="Выполнить полную повторную проверку компонентов и обновить статус">
+                🔄 Проверить снова
+              </button>
+              <div class="dialog-actions-right">
+                <button id="btnCancelSettings" class="btn btn-secondary" type="button" data-tooltip="Закрыть диалог настроек без сохранения">
+                  Закрыть
+                </button>
+                <button id="btnSaveSettings" class="btn btn-primary" type="submit" data-tooltip="Сохранить настройки и применить новые пути">
+                  Сохранить настройки
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div id="settingsDialogTooltip" class="app-floating-tooltip" role="tooltip" aria-hidden="true"></div>
+    </dialog>
+  </div>
+
+  <div id="appGlobalTooltip" class="app-floating-tooltip" role="tooltip" aria-hidden="true"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
