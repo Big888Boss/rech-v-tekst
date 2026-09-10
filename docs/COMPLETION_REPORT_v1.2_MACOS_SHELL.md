@@ -27,6 +27,6 @@
 - **Test Coverage**: PASS (Всего 36 unit тестов: 15 тестов в `test_storage_security.py`, 7 тестов в `test_macos_startup_ux.py`, 2 теста в `test_frozen_paths.py`, 12 тестов в `test_macos_lifecycle.py`. Все 36 unit тестов прошли успешно). `packaged_smoke_test.py` успешно собран и пройден.
 - **Packaged Smoke Test** (`packaged_smoke_test.py`): PASSED (HTTP 200 на `/`, `/static/index.html`, `/api/preflight`, валидный JSON, OUT_DIR вне bundle, чистый выход по SIGINT с кодом 0).
 - **Whitespace / lint check:** `git diff --check dd077016..HEAD` — 0 ошибок (полная чистота).
-- **Evidence (Runtime/UI):** VERIFIED BY ROOT: нативное окно открыто, bundle ID com.pavelboss888.rech-v-tekst, повторный запуск после quit успешен, idle AppleScript quit дважды убрал именно процесс dist/.../macos_app. Отдельно: red-close/Dock покрыты автоматическими lifecycle tests, но ручная проверка этих двух действий ещё не выполнена; BlackHole capture не проверен end-to-end.
+- **Evidence (Runtime/UI):** VERIFIED BY ROOT: нативное окно открыто, bundle ID com.pavelboss888.rech-v-tekst, повторный запуск после quit успешен, idle AppleScript quit дважды убрал именно процесс dist/.../macos_app. Отдельно: red-close/Dock manual VERIFIED BY ROOT (красная кнопка скрывает окно при живом PID, повторный open возвращает окно без нового процесса); BlackHole capture всё ещё не проверен end-to-end.
 
-Завершено: создан отдельный 10-й коммит без amend.
+Завершено: создан отдельный 12-й коммит без amend.
