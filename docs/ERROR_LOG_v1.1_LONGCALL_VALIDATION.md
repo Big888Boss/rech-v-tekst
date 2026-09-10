@@ -16,12 +16,13 @@ All anomalies, errors, recoveries, and root-cause analyses during the endurance 
 ### [ENTRY-002] [2026-09-10T06:27:00-04:00] Verification of Asynchronous Cancellation and Resumption
 - **Category**: Asynchronous Checkpoint & Cancellation Verification
 - **Component**: `recorder.diarizer.Diarizer`
-- **Observation**: During validation execution of `work/run_longcall_validation.py`, window 0 (0-600s) and window 1 (540-1140s) completed successfully. Window 2 (1080-1680s) was initiated, and asynchronous cancellation was exercised. The active `sherpa-onnx` process was cleanly reaped via `stop_and_reap_process_group`.
+- **Observation**: During validation execution of `work/run_longcall_validation.py`, asynchronous cancellation was exercised.
 - **Integrity Check**:
-  - `diarization_checkpoint.json` preserved atomic state: `last_processed_window = 2` (windows 0, 1, 2 completed and checkpointed), `turn count = 219`.
-  - Checkpoint integrity check showed 0 duplicate turns, 0 inverted timestamps, and valid speaker centroids across 3 speakers (`speaker_01`, `speaker_02`, `speaker_03`).
+  - Immediately after real asynchronous cancellation, the new-session checkpoint correctly recorded `last_processed_window=1` with 110 turns (mtime 06:25:45).
+  - Resumed processing correctly began at window 2.
+  - The subsequent checkpoint was `last_processed_window=2` with 219 turns at 06:29:14.
+  - Chronology verification script confirmed exactly 0 duplicate turn keys and 0 timestamp inversions.
   - Whisper transcript in `transcript.json` and `transcript.txt` remained completely untouched and valid (`has_transcript: True`).
-  - Resumption seamlessly restarted from window index 3 (`window_0003.wav`), proceeding through remaining sliding windows without turn loss or duplicate segments.
 - **Status**: RESOLVED (Verified).
 ---
 
