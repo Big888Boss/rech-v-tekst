@@ -14,3 +14,4 @@
 | 2026-09-10T08:30 | rech-v-tekst | Root Codex | Cmd-Q active check | Prevent close if working | Only checked capture | Missed transcribe/workers | Added `TRANSCRIBE_MANAGER` and `STATE.active_workers` check |
 | 2026-09-10T08:30 | rech-v-tekst | Root Codex | Trailing whitespace | Clean `git diff --check` | Trailing spaces | Bad IDE format | Removed via `sed -i` |
 | 2026-09-10T08:34 | rech-v-tekst | Root Codex | Data Loss Recovery | Files are >0 bytes | P0 DATA LOSS | Bad python sed script | Files restored from parent `fa37c0e`, logic reapplied carefully |
+| 2026-09-10T08:39 | rech-v-tekst | Root Codex | Startup UX Freeze | Window shows loading | Window didn't appear on error | Sequential startup blocked UI | Migrated to parallel startup with inline Russian loading HTML and robust Retry API |

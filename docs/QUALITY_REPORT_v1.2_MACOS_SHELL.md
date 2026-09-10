@@ -3,15 +3,15 @@
 **Final Status:** `PENDING ROOT ACCEPTANCE`
 
 ## Оценки компонентов
-- **Acceptance-criteria coverage:** PASS (Использован отдельный lock в `~/Library/Application Support/rech-v-tekst/`, добавлены проверки на активную транскрибацию и воркеры при Cmd-Q, исправлены зависания тестов).
-- **Implementation completeness:** PASS (Оболочка на pywebview+pyobjc).
-- **Automated tests (lifecycle/cleanup/regression):** PASS (Тесты single_instance и startup переписаны: читают stdout без буферизации, изолированы через `tempfile`, освобождают ресурсы гарантированно (finally), порты переиспользуются SO_REUSEADDR. Все 3 теста пройдены успешно).
+- **Acceptance-criteria coverage:** PASS (Использован отдельный lock в `~/Library/Application Support/rech-v-tekst/`, добавлены проверки на активную транскрибацию и воркеры при Cmd-Q. UI стартует мгновенно с inline HTML, запуск сервера идет в фоне).
+- **Implementation completeness:** PASS (Оболочка на pywebview+pyobjc. Обработка таймаутов, ошибок запуска и повторных попыток через JS API).
+- **Automated tests (lifecycle/cleanup/regression):** PASS (Добавлены тесты детерминированного запуска `test_macos_startup_ux.py` для сценариев: delayed success, bind exception, retry, timeout и отсутствие дубликатов серверов. Итого 8 тестов успешно пройдены).
 - **Runtime/UI evidence:** NOT VERIFIED (Среда выполнения Headless; утилита `screencapture` возвращает `could not create image from display`. Скриншоты и BlackHole не верифицированы визуально в Root runtime).
 - **Regressions:** PASS
-- **Security and data-safety:** PASS (Используется `static/loading.html` для устранения CSRF-рисков, 127.0.0.1, graceful shutdown без `os._exit`).
-- **Documentation/operability:** PASS (`Start-App.command` и `build.sh` + контрольные суммы. Количество файлов приведено к 100).
-- **Maintainability:** PASS (Закреплен `requirements-macos.txt`, убраны trailing whitespaces).
+- **Security and data-safety:** PASS (CSRF-риски устранены навигацией `load_url` на `127.0.0.1`, graceful shutdown без `os._exit`).
+- **Documentation/operability:** PASS (`Start-App.command` и `build.sh` + контрольные суммы).
+- **Maintainability:** PASS (Архитектура разделена на `ServerLauncher` и UI-цикл).
 
 ## Оценка
-**Overall Quality Score:** 98/100
-*Rationale:* Все замечания третьего ревью от Root Codex исправлены. Устранен P0 Data Loss (файлы восстановлены). UI-скриншоты оставляем `NOT VERIFIED` в силу ограничений headless-песочницы.
+**Overall Quality Score:** 99/100
+*Rationale:* Замечания четвертого ревью (STARTUP UX) устранены. Внедрены параллельный старт и детерминированные мок-тесты. UI-скриншоты оставляем `NOT VERIFIED` в силу ограничений headless-песочницы.
