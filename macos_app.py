@@ -92,6 +92,7 @@ class ServerLauncher:
         self.lock = threading.Lock()
         self._timeout = 10.0
         self._attempt_id = 0
+        self._is_shutdown = False
 
     def _startup_func(self):
         # Allow tests to mock this safely
@@ -162,6 +163,10 @@ class ServerLauncher:
         return True
 
     def shutdown(self):
+        with self.lock:
+            if getattr(self, '_is_shutdown', False):
+                return
+            self._is_shutdown = True
         print("Shutting down server gracefully...")
         try:
             from recorder.http_server import STATE
@@ -194,6 +199,121 @@ class ServerLauncher:
                 instance_lock_fd = None
             except Exception:
                 pass
+
+
+
+def check_is_busy() -> bool:
+    try:
+        from recorder.capture import CAPTURE_MANAGER
+        from recorder.transcribe import TRANSCRIBE_MANAGER
+        from recorder.http_server import STATE
+        return bool(
+            CAPTURE_MANAGER.is_active()
+            or TRANSCRIBE_MANAGER.progress.get("is_running", False)
+            or len(STATE.active_workers) > 0
+        )
+    except Exception as e:
+        print(f"Error checking busy state: {e}", flush=True)
+        return True
+
+def default_confirm_dialog() -> bool:
+    try:
+        from AppKit import NSAlert
+        alert = NSAlert.alloc().init()
+        alert.setMessageText_("Прервать активную работу?")
+        alert.setInformativeText_(
+            "В данный момент выполняется запись, обработка или импорт аудио. "
+            "Если вы закроете приложение, процесс будет завершен."
+        )
+        alert.addButtonWithTitle_("Закрыть и сохранить")
+        alert.addButtonWithTitle_("Отмена")
+        response = alert.runModal()
+        return response == 1000
+    except Exception as e:
+        print(f"Error in confirm dialog: {e}", flush=True)
+        return False
+
+class LifecyclePolicy:
+    def __init__(self, window=None, launcher=None, is_busy_func=None, confirm_dialog_func=None):
+        self.window = window
+        self.launcher = launcher
+        self.is_busy_func = is_busy_func or check_is_busy
+        self.confirm_dialog_func = confirm_dialog_func or default_confirm_dialog
+        self.is_terminating = False
+
+    def handle_window_closing(self) -> bool:
+        if self.is_terminating:
+            print("Window closing during application termination -> allowing close.", flush=True)
+            return True
+        print("Window closing (Red button) -> hiding instead.", flush=True)
+        if self.window:
+            self.window.hide()
+        return False
+
+    def handle_reopen(self) -> bool:
+        print("Application reopen -> showing window.", flush=True)
+        if self.window:
+            self.window.show()
+        return True
+
+    def request_termination(self) -> bool:
+        if self.is_busy_func():
+            print("Termination requested while busy -> prompting confirmation.", flush=True)
+            confirmed = self.confirm_dialog_func()
+            if not confirmed:
+                print("Termination cancelled by user.", flush=True)
+                return False
+        print("Termination approved -> shutting down server and releasing lock.", flush=True)
+        self.is_terminating = True
+        if self.launcher:
+            self.launcher.shutdown()
+        return True
+
+    def handle_will_terminate(self) -> None:
+        self.is_terminating = True
+        if self.launcher:
+            self.launcher.shutdown()
+
+try:
+    from AppKit import NSObject, NSTerminateNow, NSTerminateCancel
+    class CustomAppDelegate(NSObject):
+        def applicationShouldHandleReopen_hasVisibleWindows_(self, app, flag):
+            if hasattr(self, 'policy') and self.policy:
+                return self.policy.handle_reopen()
+            return True
+
+        def applicationShouldTerminate_(self, sender):
+            if hasattr(self, 'policy') and self.policy:
+                should_terminate = self.policy.request_termination()
+                return NSTerminateNow if should_terminate else NSTerminateCancel
+            return NSTerminateNow
+
+        def applicationWillTerminate_(self, notification):
+            if hasattr(self, 'policy') and self.policy:
+                self.policy.handle_will_terminate()
+except ImportError:
+    CustomAppDelegate = None
+
+def setup_cocoa_lifecycle(policy: LifecyclePolicy) -> None:
+    try:
+        import Foundation
+        import webview.platforms.cocoa as cocoa
+        def applicationShouldTerminate_(self, app):
+            if policy:
+                return Foundation.YES if policy.request_termination() else Foundation.NO
+            return Foundation.YES
+        def applicationShouldHandleReopen_hasVisibleWindows_(self, app, flag):
+            if policy:
+                return policy.handle_reopen()
+            return True
+        def applicationWillTerminate_(self, notification):
+            if policy:
+                policy.handle_will_terminate()
+        cocoa.BrowserView.AppDelegate.applicationShouldTerminate_ = applicationShouldTerminate_
+        cocoa.BrowserView.AppDelegate.applicationShouldHandleReopen_hasVisibleWindows_ = applicationShouldHandleReopen_hasVisibleWindows_
+        cocoa.BrowserView.AppDelegate.applicationWillTerminate_ = applicationWillTerminate_
+    except Exception as e:
+        print(f"Notice: Cocoa lifecycle hooks not configured: {e}", flush=True)
 
 
 def main():
@@ -231,56 +351,29 @@ def main():
     launcher = ServerLauncher(window)
     api.launcher = launcher
 
+
+    policy = LifecyclePolicy(window=window, launcher=launcher)
+    setup_cocoa_lifecycle(policy)
+
     def on_closing():
-        print("Window closing (Red button) -> hiding instead.")
-        window.hide()
-        return False
+        return policy.handle_window_closing()
 
     window.events.closing += on_closing
 
     def setup_app_delegate():
-        try:
-            from AppKit import NSApp, NSObject, NSAlert, NSTerminateNow, NSTerminateCancel
-            from recorder.http_server import STATE
+        if CustomAppDelegate is not None:
+            try:
+                from AppKit import NSApp
+                app_delegate = CustomAppDelegate.alloc().init()
+                app_delegate.policy = policy
+                NSApp().setDelegate_(app_delegate)
+                global _app_delegate_ref
+                _app_delegate_ref = app_delegate
+            except Exception as e:
+                print(f"Error setting app delegate: {e}", flush=True)
 
-            class CustomAppDelegate(NSObject):
-                def applicationShouldHandleReopen_hasVisibleWindows_(self, app, flag):
-                    if hasattr(self, 'webview_window') and self.webview_window:
-                        self.webview_window.show()
-                    return True
-
-                def applicationShouldTerminate_(self, sender):
-                    is_busy = (
-                        CAPTURE_MANAGER.is_active() or
-                        TRANSCRIBE_MANAGER.progress.get("is_running", False) or
-                        len(STATE.active_workers) > 0
-                    )
-                    if is_busy:
-                        alert = NSAlert.alloc().init()
-                        alert.setMessageText_("Прервать активную работу?")
-                        alert.setInformativeText_("В данный момент выполняется запись, обработка или импорт аудио. Если вы закроете приложение, процесс будет завершен.")
-                        alert.addButtonWithTitle_("Закрыть и сохранить")
-                        alert.addButtonWithTitle_("Отмена")
-                        response = alert.runModal()
-                        if response == 1001:
-                            return NSTerminateCancel
-
-                    if hasattr(self, 'launcher') and self.launcher:
-                        self.launcher.shutdown()
-                    return NSTerminateNow
-
-            app_delegate = CustomAppDelegate.alloc().init()
-            app_delegate.webview_window = window
-            app_delegate.launcher = launcher
-            NSApp().setDelegate_(app_delegate)
-            # Prevent GC
-            global _app_delegate_ref
-            _app_delegate_ref = app_delegate
-        except ImportError:
-            pass
-
-        # Start the server immediately after window creation
         launcher.start_async()
+
 
     webview.start(setup_app_delegate, debug=False)
     launcher.shutdown()

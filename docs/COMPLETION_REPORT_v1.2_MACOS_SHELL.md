@@ -24,12 +24,7 @@
 - Контрольная сумма `dist/checksum.txt` проверена.
 
 ## Тестирование и Evidence
-- **Unit тесты (27 passed):**
-  - `tests/test_storage_security.py`: 15 passed (11 оригинальных + 4 `ensure_readonly_root_dir`).
-  - `tests/test_macos_startup_ux.py`: 7 passed.
-  - `tests/test_frozen_paths.py`: 2 passed.
-  - `tests/test_macos_lifecycle.py`: 3 passed.
-  - Итого: **27 passed** из 27.
+- **Test Coverage**: PASS (Всего 36 unit тестов: 15 тестов в `test_storage_security.py`, 7 тестов в `test_macos_startup_ux.py`, 2 теста в `test_frozen_paths.py`, 12 тестов в `test_macos_lifecycle.py`. Все 36 unit тестов прошли успешно). `packaged_smoke_test.py` успешно собран и пройден.
 - **Packaged Smoke Test** (`packaged_smoke_test.py`): PASSED (HTTP 200 на `/`, `/static/index.html`, `/api/preflight`, валидный JSON, OUT_DIR вне bundle, чистый выход по SIGINT с кодом 0).
 - **Whitespace / lint check:** `git diff --check dd077016..HEAD` — 0 ошибок (полная чистота).
 - **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` до запуска в Root GUI окружении.

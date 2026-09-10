@@ -58,7 +58,7 @@ app = BUNDLE(
     coll,
     name='Речь в текст.app',
     icon=None,
-    bundle_identifier='com.max.rechvtekst',
+    bundle_identifier='com.pavelboss888.rech-v-tekst',
     info_plist={
         'NSMicrophoneUsageDescription': 'Приложению необходим доступ к микрофону для записи речи.',
         'NSHighResolutionCapable': 'True',
