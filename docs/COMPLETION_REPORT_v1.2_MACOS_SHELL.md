@@ -4,26 +4,24 @@
 - **Executor:** Antigravity
 - **Primary Model Selected:** Gemini 3.1 Pro
 - **Base Commit SHA:** `dd077016df497885ad3f0f67b562efdb637dc37c`
-- **Previous SHA:** `90761c8`
-- **Current HEAD SHA:** См. `git log` (6-й финальный коммит).
+- **Previous SHA:** `e3b37ab`
+- **Current HEAD SHA:** См. `git log` (7-й финальный коммит).
 - **Codex Implementation Status:** PROHIBITED
 - **Final Status:** READY FOR ACCEPTANCE
 
-## Делегированный скоуп (Исправления по P0, итерация 5: Race Condition)
-- **Токены отмены (Cancel Tokens):** В `ServerLauncher` введена монотонная переменная `_attempt_id`. Попытка может изменять UI и `http_server` только если она остается актуальной. Запоздалые серверы от тайм-аутов закрываются (`server_close()`), предотвращая утечки портов.
-- **Безопасный JSON:** Все сообщения об ошибках для UI кодируются через `json.dumps(msg, ensure_ascii=False)`.
-- **Валидация запуска:** Проверяется результат функции старта сервера: при `None` или отсутствии API `serve_forever`/`server_close` выводится читаемая ошибка вместо падения потока.
-- **Утечка fcntl:** При неудаче захвата Single-Instance Lock файловый дескриптор `os.close(fd)` корректно закрывается, ссылка очищается.
-- **Изоляция тестов:** В `test_macos_startup_ux.py` добавлен `sys.path.insert`, что позволяет запускать тесты напрямую без ручного проброса `PYTHONPATH`.
+## Делегированный скоуп (Исправления по P0, итерация 6: Packaged Runtime)
+- **Изоляция данных от Bundle:** В режиме PyInstaller (`sys.frozen`) введены раздельные константы путей. Читаемые ресурсы бандла (`STATIC_DIR`) ссылаются на `Contents/Resources`. Записываемые данные (`OUT_DIR`, `MODELS_DIR`, `WORK_BIN_DIR`) ссылаются на `~/Library/Application Support/rech-v-tekst/` или переопределяются через переменные окружения, предотвращая изменение подписи `.app` и PermissionErrors.
+- **Исправление Symlink Security:** Встроенная проверка безопасности на симлинки (`verify_path_components_safe`) отключена для проверки `STATIC_DIR`, так как PyInstaller легитимно использует симлинки в сборке macOS, при этом пользовательские данные всё ещё надежно защищены от симлинк-атак.
+- **Packaged Smoke Test:** Написан и запущен скрипт `packaged_smoke_test.py`, который скомпилировал приложение через `./build.sh` и доказал отдачу файлов через `http` изнутри скомпилированного бандла (без конфликтов `safe_read_file`) и чистый выход по SIGINT.
 
 ## Статистика и артефакты
 - **Размер приложения:** ~15 MB (`dist/Речь в текст.app`)
 - **Запускатели:** Основной — `Start-App.command`.
-- Контрольная сумма `dist/checksum.txt` пересобрана после внесения изменений.
+- Контрольная сумма `dist/checksum.txt` пересобрана.
 
 ## Тестирование и Evidence
-- Добавлены новые детерминированные тесты (`test_stale_startup_abandoned`, `test_invalid_startup_return`).
-- Итого **10 тестов** (жизненный цикл + startup UX + гонки) успешно пройдены локально через `.venv/bin/pytest`.
-- **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` для среды Root runtime из-за ограничений headless (ошибка `could not create image from display`).
+- Добавлены тесты проверки путей `test_frozen_paths.py` (Flat Bundle / macOS Bundle).
+- **Packaged Smoke Test** (`packaged_smoke_test.py`) успешно запросил `/`, `/static/loading.html` и `/api/preflight` на собранном приложении и получил `HTTP 200 OK`. Доказано, что `OUT_DIR` создается снаружи бандла.
+- **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` для среды Root runtime.
 
-Завершено: создан отдельный шестой коммит без amend.
+Завершено: создан отдельный седьмой коммит без amend.

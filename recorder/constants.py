@@ -3,15 +3,34 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from pathlib import Path
 
 # Paths
-BASE_DIR = Path(__file__).resolve().parent.parent
-_env_out = os.environ.get("WEBINAR_OUT_DIR")
+if getattr(sys, "frozen", False):
+    _meipass = Path(sys._MEIPASS).resolve()
+    # PyInstaller macOS .app puts binaries in MacOS, libs in Frameworks, data in Resources.
+    # _MEIPASS is usually Contents/Frameworks.
+    if _meipass.name == "Frameworks" and _meipass.parent.name == "Contents":
+        RESOURCE_BASE_DIR = _meipass.parent / "Resources"
+    else:
+        RESOURCE_BASE_DIR = _meipass
+
+    _app_support = Path.home() / "Library" / "Application Support" / "rech-v-tekst"
+    BASE_DIR = _app_support
+else:
+    RESOURCE_BASE_DIR = Path(__file__).resolve().parent.parent
+    BASE_DIR = RESOURCE_BASE_DIR
+
+_env_out = os.environ.get("WEBINAR_OUT_DIR") or os.environ.get("RECH_V_TEKST_OUT_DIR")
 OUT_DIR = Path(_env_out).resolve() if _env_out else BASE_DIR / "out"
+
 MODELS_DIR = BASE_DIR / "models"
 DEFAULT_MODEL_PATH = MODELS_DIR / "ggml-large-v3-turbo.bin"
-STATIC_DIR = BASE_DIR / "static"
+
+# STATIC_DIR comes from bundled resources, MUST NOT be in writable BASE_DIR
+STATIC_DIR = RESOURCE_BASE_DIR / "static"
+
 UPLOADS_DIR = OUT_DIR / "uploads"
 LOCK_FILE = OUT_DIR / ".recorder.lock"
 TASK_LOCAL_BIN_DIR = BASE_DIR / "work" / "task_local_ffmpeg"

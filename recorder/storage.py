@@ -63,7 +63,9 @@ def verify_path_components_safe(target_path: Path, root: Path | None = None) -> 
     Crucially does NOT call .resolve() on target_path to avoid canonicalizing symlinks away.
     """
     active_root = _resolve_root(root)
-    ensure_private_out_dir(active_root)
+    from .constants import STATIC_DIR
+    if active_root != STATIC_DIR:
+        ensure_private_out_dir(active_root)
 
     # Compute relative path string without resolving symlinks in target_path
     target_abs = os.path.abspath(target_path)
@@ -101,7 +103,9 @@ def get_session_dir(
     """Return the absolute Path to a session directory, enforcing containment and no-symlinks."""
     valid_id = validate_session_id(session_id)
     active_root = _resolve_root(root)
-    ensure_private_out_dir(active_root)
+    from .constants import STATIC_DIR
+    if active_root != STATIC_DIR:
+        ensure_private_out_dir(active_root)
     target_path = active_root / valid_id
 
     if os.path.islink(target_path):
@@ -126,7 +130,9 @@ def get_session_dir(
 def safe_make_dir(path: Path, mode: int = 0o700, root: Path | None = None) -> None:
     """Create directory strictly inside root with restricted private permissions (0o700)."""
     active_root = _resolve_root(root)
-    ensure_private_out_dir(active_root)
+    from .constants import STATIC_DIR
+    if active_root != STATIC_DIR:
+        ensure_private_out_dir(active_root)
 
     target_abs = os.path.abspath(path)
     root_abs = os.path.abspath(active_root)
