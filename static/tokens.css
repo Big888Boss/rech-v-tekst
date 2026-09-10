@@ -82,4 +82,26 @@
   --ad-z-sticky: 1;
   --ad-z-skip-link: 10;
   --ad-z-tooltip: 20;
+
+  /* Speaker Diarization 20 Accessible Colors (v1.1) */
+  --spk-1: #0066cc;
+  --spk-2: #18794e;
+  --spk-3: #7d33e8;
+  --spk-4: #c05621;
+  --spk-5: #0f766e;
+  --spk-6: #b42318;
+  --spk-7: #4338ca;
+  --spk-8: #9d174d;
+  --spk-9: #0369a1;
+  --spk-10: #15803d;
+  --spk-11: #854d0e;
+  --spk-12: #6b21a8;
+  --spk-13: #be185d;
+  --spk-14: #0e7490;
+  --spk-15: #374151;
+  --spk-16: #9a3412;
+  --spk-17: #4d7c0f;
+  --spk-18: #1e40af;
+  --spk-19: #a21caf;
+  --spk-20: #b91c1c;
 }

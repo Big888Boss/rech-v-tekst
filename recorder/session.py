@@ -56,6 +56,11 @@ class SessionManifest:
     has_transcript: bool = False
     has_summary: bool = False
     in_queue: bool = True
+    schema_version: int = 2
+    diarization_status: str | None = None
+    diarization_params: dict[str, Any] = field(default_factory=dict)
+    speakers: dict[str, dict[str, Any]] = field(default_factory=dict)
+    has_diarization: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -72,6 +77,17 @@ class SessionManifest:
             data["in_queue"] = bool(data["in_queue"])
         else:
             data["in_queue"] = True
+
+        if "schema_version" not in data:
+            data["schema_version"] = 1
+        if "speakers" not in data or not isinstance(data.get("speakers"), dict):
+            data["speakers"] = {}
+        if "diarization_params" not in data or not isinstance(data.get("diarization_params"), dict):
+            data["diarization_params"] = {}
+        if "has_diarization" in data:
+            data["has_diarization"] = bool(data["has_diarization"])
+        else:
+            data["has_diarization"] = False
 
         if not isinstance(data.get("raw_chunks"), list):
             data["raw_chunks"] = []
@@ -239,6 +255,20 @@ def load_session(session_id: str) -> SessionManifest | None:
         s_file = sess_dir / "summary.md"
         manifest.has_transcript = is_safe_regular_file(t_file) and t_file.stat().st_size > 0
         manifest.has_summary = is_safe_regular_file(s_file) and s_file.stat().st_size > 0
+
+        t_json = sess_dir / "transcript.json"
+        if is_safe_regular_file(t_json):
+            try:
+                t_data = json.loads(safe_read_text(t_json))
+                if isinstance(t_data, dict) and t_data.get("diarization"):
+                    manifest.has_diarization = True
+                    if not manifest.diarization_status:
+                        manifest.diarization_status = t_data["diarization"].get("status", "completed")
+                    if not manifest.speakers and t_data["diarization"].get("speakers"):
+                        manifest.speakers = t_data["diarization"]["speakers"]
+            except Exception:
+                pass
+
         return manifest
     except Exception:
         return None

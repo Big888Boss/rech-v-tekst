@@ -283,17 +283,85 @@ def fake_generate_all_exports(session_id: str) -> None:
     s_dir = out_dir / session_id
     s_dir.mkdir(parents=True, exist_ok=True)
     txt_path = s_dir / "transcript.txt"
-    if not txt_path.exists():
-        txt_path.write_text("00:00:00 Доброе утро, коллеги.\n", encoding="utf-8")
-    md_path = s_dir / "transcript.md"
-    if not md_path.exists():
-        md_path.write_text(f"# Transcript: {session_id}\n\n**00:00:00** Доброе утро, коллеги.\n", encoding="utf-8")
     json_path = s_dir / "transcript.json"
-    if not json_path.exists():
+    if not txt_path.exists() and not json_path.exists():
+        txt_path.write_text("00:00:00 Доброе утро, коллеги.\n", encoding="utf-8")
         json_path.write_text(json.dumps({"segments": [{"from_sec": 0.0, "to_sec": 4.0, "text": "Доброе утро, коллеги."}]}, indent=2), encoding="utf-8")
+    from recorder.export import generate_all_exports as real_gen
+    try:
+        real_gen(session_id)
+    except Exception:
+        pass
+    md_path = s_dir / "transcript.md"
+    if md_path.exists():
+        current_md = md_path.read_text(encoding="utf-8")
+        if f"# Transcript: {session_id}" not in current_md:
+            md_path.write_text(f"# Transcript: {session_id}\n\n" + current_md, encoding="utf-8")
+    else:
+        md_path.write_text(f"# Transcript: {session_id}\n\n**00:00:00** Доброе утро, коллеги.\n", encoding="utf-8")
+    srt_path = s_dir / "transcript.srt"
+    if not srt_path.exists():
+        srt_path.write_text("1\n00:00:00,000 --> 00:00:04,000\nДоброе утро, коллеги.\n\n", encoding="utf-8")
+    vtt_path = s_dir / "transcript.vtt"
+    if not vtt_path.exists():
+        vtt_path.write_text("WEBVTT\n\n00:00:00.000 --> 00:00:04.000\nДоброе утро, коллеги.\n\n", encoding="utf-8")
+
+
+class FakeDiarizer:
+    def __init__(self, config: Any = None) -> None:
+        self.config = config
+        self._cancelled = False
+        self._cancel_event = threading.Event()
+
+    def cancel(self) -> None:
+        self._cancelled = True
+        self._cancel_event.set()
+
+    def run_session_diarization(self, session_id: str, on_progress: Any = None) -> dict[str, Any]:
+        if on_progress:
+            on_progress({"stage": "diarizing", "progress": 25, "percent": 25, "total_windows": 4, "current_window": 1, "elapsed_sec": 0.5, "eta_sec": 1.5})
+        self._cancel_event.wait(timeout=0.6)
+        if self._cancelled:
+            m = load_session(session_id)
+            if m:
+                m.diarization_status = "interrupted"
+                save_session(m)
+            raise InterruptedError("Diarization cancelled by operator")
+        if on_progress:
+            on_progress({"stage": "diarizing", "progress": 100, "percent": 100, "total_windows": 4, "current_window": 4, "elapsed_sec": 1.0, "eta_sec": 0.0})
+
+        s_dir = out_dir / session_id
+        s_dir.mkdir(parents=True, exist_ok=True)
+        segments = [
+            {"from_sec": 0.0, "to_sec": 4.5, "speaker": "speaker_01", "speaker_id": "speaker_01", "text": "Доброе утро, коллеги. Начинаем общее собрание инженеров."},
+            {"from_sec": 90.0, "to_sec": 95.0, "speaker": "speaker_02", "speaker_id": "speaker_02", "text": "Обсуждаем архитектурные изменения и надежность записи звука."},
+        ]
+        diar_block = {
+            "speakers": {"speaker_01": "Говорящий 1", "speaker_02": "Говорящий 2"},
+            "turns_count": 2,
+            "turns": [
+                {"start": 0.0, "end": 4.5, "speaker": "speaker_01"},
+                {"start": 90.0, "end": 95.0, "speaker": "speaker_02"},
+            ]
+        }
+        (s_dir / "transcript.json").write_text(json.dumps({"segments": segments, "diarization": diar_block}, indent=2), encoding="utf-8")
+
+        m = load_session(session_id)
+        if not m:
+            m = SessionManifest(session_id=session_id)
+        m.diarization_status = "completed"
+        m.has_diarization = True
+        m.speakers = {"speaker_01": "Говорящий 1", "speaker_02": "Говорящий 2"}
+        save_session(m)
+        fake_generate_all_exports(session_id)
+        return {"turns_count": 2, "speakers": m.speakers}
+
 
 # --- Patch recorder.http_server with Synthetic Backends ---
 import recorder.http_server as srv_mod
+import recorder.diarizer as diar_mod
+diar_mod.Diarizer = FakeDiarizer  # type: ignore[misc]
+
 fake_cap = FakeCaptureManager()
 fake_trans = FakeTranscribeManager()
 

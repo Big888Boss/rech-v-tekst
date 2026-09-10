@@ -130,7 +130,10 @@
 
         <div class="preflight-controls">
           <div class="form-group">
-            <label for="sourceSelect" class="form-label">Источник записи</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--ad-space-1);">
+              <label for="sourceSelect" class="form-label" style="margin-bottom: 0;">Источник записи</label>
+              <button type="button" id="btnQuickUpload" class="btn btn-quiet btn-sm" data-tooltip="Открыть выбор готового аудио или видео файла для импорта">📁 Импорт файла (аудио/видео)</button>
+            </div>
             <select id="sourceSelect" class="form-select">
               <option value="zoom" selected>Zoom / Системный звук (BlackHole)</option>
               <option value="mic">Микрофон (Офлайн-встреча)</option>
@@ -157,6 +160,28 @@
               <option value="en">Английский</option>
               <option value="auto">Автоопределение</option>
             </select>
+          </div>
+
+          <div class="form-group" id="diarizationOptionsGroup">
+            <label class="form-label" for="diarizationEnabledCheck">Разделение по голосам</label>
+            <div class="form-row-compact" style="display: flex; gap: var(--ad-space-2); align-items: center;">
+              <label class="form-checkbox-label" style="margin: 0; min-height: var(--ad-control-height); display: flex; align-items: center;">
+                <input type="checkbox" id="diarizationEnabledCheck" class="form-checkbox">
+                <span class="checkbox-label">Диаризация</span>
+              </label>
+              <select id="diarizationSpeakersSelect" class="form-select" style="inline-size: auto; flex: 1;" disabled aria-label="Количество говорящих">
+                <option value="0" selected>Авто (2–20)</option>
+                <option value="2">2 говорящих</option>
+                <option value="3">3 говорящих</option>
+                <option value="4">4 говорящих</option>
+                <option value="5">5 говорящих</option>
+                <option value="6">6 говорящих</option>
+                <option value="7">7 говорящих</option>
+                <option value="8">8 говорящих</option>
+                <option value="9">9 говорящих</option>
+                <option value="10">10 говорящих</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-actions">
@@ -213,6 +238,7 @@
           <div class="active-controls">
             <button id="btnStopCapture" class="btn btn-danger" type="button" hidden data-tooltip="Штатно завершить текущую запись: аудиосегменты будут сохранены для обработки" data-tooltip-disabled="Остановка доступна только во время активной записи">Остановить запись</button>
             <button id="btnCancelProcess" class="btn btn-secondary" type="button" hidden data-tooltip="Прервать текущий процесс распознавания речи" data-tooltip-disabled="Отмена доступна только во время активной обработки">Отменить обработку</button>
+            <button id="btnCancelDiarization" class="btn btn-secondary" type="button" hidden data-tooltip="Прервать процесс диаризации голосов (расшифровка речи сохранится)" data-tooltip-disabled="Отмена доступна только во время активной диаризации">Отменить диаризацию</button>
             <span id="activeControlHelp" class="control-help-text" hidden>При остановке сегменты сохраняются на диске и доступны для повторной обработки.</span>
           </div>
         </div>
@@ -238,6 +264,13 @@
               <progress id="activeProgressBar" value="0" max="100" class="progress-bar" aria-label="Прогресс распознавания"></progress>
             </div>
             <span id="activeProgressLabel" class="progress-text" role="status" aria-live="polite">Обработка кусков...</span>
+          </div>
+
+          <div id="activeDiarizationProgressBlock" class="progress-block" hidden>
+            <div class="progress-bar-wrapper">
+              <progress id="activeDiarizationProgressBar" value="0" max="100" class="progress-bar" aria-label="Прогресс разделения голосов"></progress>
+            </div>
+            <span id="activeDiarizationProgressLabel" class="progress-text" role="status" aria-live="polite">Диаризация: окно 0 из 0...</span>
           </div>
         </div>
       </section>
@@ -364,6 +397,10 @@
               </div>
             </div>
 
+            <button id="btnDiarizeSession" class="btn btn-secondary" type="button" data-tooltip="Запустить или повторить разделение по голосам (диаризацию) для этой сессии" data-tooltip-disabled="Диаризация недоступна: выполняется операция или модель не установлена">
+              <span>Диаризация</span>
+            </button>
+
             <button id="btnRequestSummary" class="btn btn-secondary" type="button" data-tooltip="Открыть диалог формирования краткого конспекта вебинара через ИИ" data-tooltip-disabled="Создание конспекта недоступно: сессия ещё не расшифрована или сервер занят">
               <span>Сделать конспект</span>
             </button>
@@ -385,6 +422,9 @@
         <div id="panelTranscript" class="tab-panel" role="tabpanel" aria-labelledby="tabTranscript">
           <div class="search-bar-inline">
             <input id="transcriptSearchInput" type="search" class="form-input" placeholder="Поиск в расшифровке..." aria-label="Поиск в расшифровке">
+          </div>
+          <div id="speakerLegendContainer" class="speaker-legend" hidden>
+            <!-- Speaker legend and rename inputs rendered dynamically -->
           </div>
           <div id="transcriptView" class="transcript-scroll-area">
             <!-- Transcript entries rendered dynamically -->
@@ -545,6 +585,15 @@
               </div>
               <div class="readiness-card-desc" id="descScenarioTranscribe">whisper.cpp + модель large-v3-turbo</div>
             </div>
+
+            <div class="readiness-card" id="cardScenarioDiarize">
+              <div class="readiness-card-header">
+                <span class="readiness-icon">👥</span>
+                <span class="readiness-title">Диаризация (v1.1)</span>
+                <span class="readiness-badge" id="badgeScenarioDiarize">Проверка...</span>
+              </div>
+              <div class="readiness-card-desc" id="descScenarioDiarize">sherpa-onnx + pyannote + eres2net</div>
+            </div>
           </div>
         </div>
 
@@ -578,7 +627,7 @@
             </div>
           </div>
 
-          <!-- Installer Box -->
+          <!-- Installer Box (Whisper) -->
           <div id="installerBox" class="installer-box" hidden>
             <div class="installer-header">
               <span class="installer-title">Фоновая установка компонентов Whisper (v1.9.3 + large-v3-turbo)</span>
@@ -596,6 +645,19 @@
             <div class="installer-actions">
               <button id="btnStartInstall" class="btn btn-secondary btn-sm" type="button" data-tooltip="Запустить скачивание официальной модели large-v3-turbo и сборку whisper-cli">
                 Установить компоненты (~1.6 ГБ)
+              </button>
+            </div>
+          </div>
+
+          <!-- Diarization Installer Box -->
+          <div id="diarizationInstallerBox" class="installer-box" style="margin-block-start: var(--ad-space-3);">
+            <div class="installer-header">
+              <span class="installer-title">Компоненты диаризации речи (sherpa-onnx + pyannote + eres2net)</span>
+            </div>
+            <p class="installer-desc" id="diarizationInstallerMessage">Проверка наличия моделей и бинарных библиотек sherpa-onnx...</p>
+            <div class="installer-actions">
+              <button id="btnStartDiarizationInstall" class="btn btn-secondary btn-sm" type="button" data-tooltip="Загрузить официальные ONNX-модели и библиотеки sherpa-onnx">
+                Установить компоненты диаризации
               </button>
             </div>
           </div>

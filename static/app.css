@@ -682,15 +682,114 @@ body {
 
 .transcript-entry {
   display: grid;
-  grid-template-columns: var(--ad-event-time-width) 1fr;
-  gap: var(--ad-space-3);
+  grid-template-columns: var(--ad-event-time-width) auto 1fr;
+  gap: var(--ad-space-2) var(--ad-space-3);
   font-size: var(--ad-text-sm);
+  align-items: baseline;
 }
 
 .transcript-time {
   font-family: var(--ad-font-mono);
   color: var(--ad-color-text-secondary);
+  white-space: nowrap;
 }
+
+.speaker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+  padding-inline: var(--ad-space-2);
+  padding-block: 2px;
+  border-radius: var(--ad-radius-sm);
+  font-size: var(--ad-text-xs);
+  font-weight: var(--ad-weight-semibold);
+  white-space: nowrap;
+  border: 1px solid currentColor;
+  background-color: var(--ad-color-surface-subtle);
+}
+
+.speaker-badge[data-speaker-idx="1"] { color: var(--spk-1); background-color: rgba(0, 102, 204, 0.08); }
+.speaker-badge[data-speaker-idx="2"] { color: var(--spk-2); background-color: rgba(24, 121, 78, 0.08); }
+.speaker-badge[data-speaker-idx="3"] { color: var(--spk-3); background-color: rgba(125, 51, 232, 0.08); }
+.speaker-badge[data-speaker-idx="4"] { color: var(--spk-4); background-color: rgba(192, 86, 33, 0.08); }
+.speaker-badge[data-speaker-idx="5"] { color: var(--spk-5); background-color: rgba(15, 118, 110, 0.08); }
+.speaker-badge[data-speaker-idx="6"] { color: var(--spk-6); background-color: rgba(180, 35, 24, 0.08); }
+.speaker-badge[data-speaker-idx="7"] { color: var(--spk-7); background-color: rgba(67, 56, 202, 0.08); }
+.speaker-badge[data-speaker-idx="8"] { color: var(--spk-8); background-color: rgba(157, 23, 77, 0.08); }
+.speaker-badge[data-speaker-idx="9"] { color: var(--spk-9); background-color: rgba(3, 105, 161, 0.08); }
+.speaker-badge[data-speaker-idx="10"] { color: var(--spk-10); background-color: rgba(21, 128, 61, 0.08); }
+.speaker-badge[data-speaker-idx="11"] { color: var(--spk-11); background-color: rgba(133, 77, 14, 0.08); }
+.speaker-badge[data-speaker-idx="12"] { color: var(--spk-12); background-color: rgba(107, 33, 168, 0.08); }
+.speaker-badge[data-speaker-idx="13"] { color: var(--spk-13); background-color: rgba(190, 24, 93, 0.08); }
+.speaker-badge[data-speaker-idx="14"] { color: var(--spk-14); background-color: rgba(14, 116, 144, 0.08); }
+.speaker-badge[data-speaker-idx="15"] { color: var(--spk-15); background-color: rgba(55, 65, 81, 0.08); }
+.speaker-badge[data-speaker-idx="16"] { color: var(--spk-16); background-color: rgba(154, 52, 18, 0.08); }
+.speaker-badge[data-speaker-idx="17"] { color: var(--spk-17); background-color: rgba(77, 124, 15, 0.08); }
+.speaker-badge[data-speaker-idx="18"] { color: var(--spk-18); background-color: rgba(30, 64, 175, 0.08); }
+.speaker-badge[data-speaker-idx="19"] { color: var(--spk-19); background-color: rgba(162, 28, 175, 0.08); }
+.speaker-badge[data-speaker-idx="20"] { color: var(--spk-20); background-color: rgba(185, 28, 28, 0.08); }
+
+.speaker-badge-unknown {
+  color: var(--ad-status-idle);
+  background-color: var(--ad-color-surface-subtle);
+  border-color: var(--ad-color-border);
+}
+
+.overlap-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: var(--ad-space-2);
+  padding-inline: var(--ad-space-1);
+  padding-block: 1px;
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  border-radius: var(--ad-radius-sm);
+  font-size: 11px;
+  font-weight: var(--ad-weight-medium);
+}
+
+.speaker-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ad-space-2);
+  padding: var(--ad-space-3);
+  background-color: var(--ad-color-surface-subtle);
+  border: var(--ad-border-width) solid var(--ad-color-border);
+  border-radius: var(--ad-radius-sm);
+  margin-block-end: var(--ad-space-2);
+}
+
+.speaker-legend-title {
+  font-size: var(--ad-text-xs);
+  font-weight: var(--ad-weight-semibold);
+  color: var(--ad-color-text-secondary);
+  margin-inline-end: var(--ad-space-2);
+}
+
+.speaker-rename-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ad-space-1);
+}
+
+.speaker-rename-input {
+  font-size: var(--ad-text-xs);
+  padding-inline: var(--ad-space-2);
+  padding-block: 2px;
+  border: 1px solid var(--ad-color-border);
+  border-radius: var(--ad-radius-sm);
+  background-color: var(--ad-color-surface);
+  color: var(--ad-color-text);
+  inline-size: 130px;
+}
+
+.speaker-rename-input:focus {
+  outline: var(--ad-focus-width) solid var(--ad-color-focus);
+  outline-offset: 1px;
+}
+
 
 .summary-content {
   padding: var(--ad-space-4);

@@ -537,3 +537,86 @@ class InstallerManager:
 # Global singleton installer manager
 INSTALLER = InstallerManager()
 atexit.register(INSTALLER.cancel_install)
+
+
+def get_diarization_install_status() -> dict[str, Any]:
+    """Get status of speaker diarization backend and models."""
+    import platform
+    from .diarizer import verify_diarizer_components
+    status = verify_diarizer_components()
+    arch = platform.machine()
+    status["arch"] = arch
+    status["arch_supported"] = (arch == "arm64")
+    if arch != "arm64":
+        status["blocked_reason"] = (
+            "Установка diarization на macOS Intel x86_64 заблокирована: "
+            "ожидает проверенных официальных дистрибутивов и контрольных сумм. "
+            "Поддерживается macOS Apple Silicon arm64."
+        )
+    return status
+
+
+def install_diarization_components(force: bool = False) -> dict[str, Any]:
+    """Install or verify pinned sherpa-onnx binary, library, and models."""
+    import platform
+    arch = platform.machine()
+    if arch != "arm64":
+        raise RuntimeError(
+            "Установка diarization на macOS Intel x86_64 заблокирована: "
+            "ожидает проверенных официальных дистрибутивов и контрольных сумм. "
+            "Поддерживается macOS Apple Silicon arm64."
+        )
+
+    status = get_diarization_install_status()
+    if status["ready"] and not force:
+        return status
+
+    # Check local task spike directory as offline cache first
+    spike_dir = BASE_DIR / "work" / "diarization-spike"
+    work_bin_dir = BASE_DIR / "work" / "bin"
+    work_lib_dir = BASE_DIR / "work" / "lib"
+    models_diar_dir = MODELS_DIR / "diarization" / "sherpa-onnx-pyannote-segmentation-3-0"
+
+    work_bin_dir.mkdir(parents=True, exist_ok=True)
+    work_lib_dir.mkdir(parents=True, exist_ok=True)
+    models_diar_dir.mkdir(parents=True, exist_ok=True)
+
+    if spike_dir.exists():
+        spike_bin = spike_dir / "bin" / "sherpa-onnx-offline-speaker-diarization"
+        if spike_bin.exists():
+            dest = work_bin_dir / "sherpa-onnx-offline-speaker-diarization"
+            if not dest.exists() or force:
+                shutil.copy2(spike_bin, dest)
+                dest.chmod(0o755)
+
+        spike_lib = spike_dir / "lib" / "libsherpa-onnx-c-api.dylib"
+        if spike_lib.exists():
+            dest_lib = work_lib_dir / "libsherpa-onnx-c-api.dylib"
+            if not dest_lib.exists() or force:
+                shutil.copy2(spike_lib, dest_lib)
+
+        spike_onnx = spike_dir / "lib" / "libonnxruntime.dylib"
+        if spike_onnx.exists():
+            dest_onnx = work_lib_dir / "libonnxruntime.dylib"
+            if not dest_onnx.exists() or force:
+                shutil.copy2(spike_onnx, dest_onnx)
+
+        spike_seg = spike_dir / "models" / "sherpa-onnx-pyannote-segmentation-3-0" / "model.int8.onnx"
+        if spike_seg.exists():
+            dest_seg = models_diar_dir / "model.int8.onnx"
+            if not dest_seg.exists() or force:
+                shutil.copy2(spike_seg, dest_seg)
+
+        spike_emb = spike_dir / "models" / "3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx"
+        if spike_emb.exists():
+            dest_emb = MODELS_DIR / "diarization" / "3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx"
+            if not dest_emb.exists() or force:
+                shutil.copy2(spike_emb, dest_emb)
+
+    # Re-check status with hash verification
+    new_status = get_diarization_install_status()
+    if not new_status["ready"]:
+        raise RuntimeError(f"Не удалось подготовить компоненты диаризации: {', '.join(new_status.get('errors', []))}")
+
+    return new_status
+

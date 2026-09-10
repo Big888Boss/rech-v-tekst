@@ -103,9 +103,13 @@ class TestSecurityRound03(IsolatedTestCase):
         handler.client_address = ("127.0.0.1", 54321)
 
         # Simulate unlink failure
-        with patch.object(Path, "unlink", side_effect=PermissionError("Mock unlink failed")):
-            with self.assertRaises(Exception):
-                HardenedHTTPHandler.handle_upload(handler, "")
+        fake_tools = MagicMock()
+        fake_tools.ready = True
+        fake_tools.missing = ()
+        with patch("recorder.http_server.get_media_tools_status", return_value=fake_tools):
+            with patch.object(Path, "unlink", side_effect=PermissionError("Mock unlink failed")):
+                with self.assertRaises(Exception):
+                    HardenedHTTPHandler.handle_upload(handler, "")
 
         # Verify GLOBAL_LOCK was released despite unlink exception!
         GLOBAL_LOCK.acquire("test", "sess_after_cleanup_fail")
@@ -136,10 +140,14 @@ class TestSecurityRound03(IsolatedTestCase):
         handler.connection = MagicMock()
         handler.rfile = io.BufferedReader(TrickleStream())
 
-        with patch("time.monotonic", side_effect=fake_monotonic):
-            with self.assertRaises(TimeoutError) as ctx:
-                HardenedHTTPHandler.handle_upload(handler, "")
-            self.assertIn("exceeded maximum allowed duration", str(ctx.exception).lower())
+        fake_tools = MagicMock()
+        fake_tools.ready = True
+        fake_tools.missing = ()
+        with patch("recorder.http_server.get_media_tools_status", return_value=fake_tools):
+            with patch("time.monotonic", side_effect=fake_monotonic):
+                with self.assertRaises(TimeoutError) as ctx:
+                    HardenedHTTPHandler.handle_upload(handler, "")
+                self.assertIn("exceeded maximum allowed duration", str(ctx.exception).lower())
 
         # Lock must be released
         GLOBAL_LOCK.acquire("test", "sess_trickle_after")

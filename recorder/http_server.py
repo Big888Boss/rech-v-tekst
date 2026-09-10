@@ -81,6 +81,8 @@ class ServerState:
         self.last_preflight: dict | None = None
         self.started_at: float = time.time()
         self.active_workers: dict[str, dict[str, Any]] = {}
+        self.active_diarizers: dict[str, Any] = {}
+        self.active_diarizer_progress: dict[str, Any] = {}
         self._workers_lock = threading.RLock()
 
     def log(self, line: str) -> None:
@@ -118,6 +120,14 @@ class ServerState:
             pass
 
         with self._workers_lock:
+            diarizers = list(self.active_diarizers.values())
+        for d in diarizers:
+            try:
+                d.cancel()
+            except Exception:
+                pass
+
+        with self._workers_lock:
             workers = list(self.active_workers.values())
 
         for w in workers:
@@ -136,6 +146,7 @@ class ServerState:
 
         with self._workers_lock:
             self.active_workers.clear()
+            self.active_diarizers.clear()
 
 
 STATE = ServerState()
@@ -220,6 +231,8 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
                 self.handle_api_settings_get(parsed.query)
             elif path == "/api/install/status":
                 self.handle_api_install_status()
+            elif path == "/api/diarization/status":
+                self.handle_api_diarization_status()
             elif path.startswith("/files/"):
                 self.handle_file_download(path[len("/files/"):])
             elif path == "/favicon.ico":
@@ -283,6 +296,14 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
                 self.handle_api_settings_post(body)
             elif path == "/api/install/start":
                 self.handle_api_install_start(body)
+            elif path == "/api/installer/diarize":
+                self.handle_api_installer_diarize(body)
+            elif path == "/api/session/diarize":
+                self.handle_session_diarize(body)
+            elif path == "/api/session/diarize/cancel":
+                self.handle_session_diarize_cancel(body)
+            elif path == "/api/session/speakers":
+                self.handle_session_speakers(body)
             else:
                 self.send_error_json(HTTPStatus.NOT_FOUND, "Not found")
 
@@ -441,6 +462,17 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
                     "status": "running",
                 }
 
+        if active is None:
+            with STATE._workers_lock:
+                active_diar_id = next(iter(STATE.active_diarizers.keys()), None)
+            if active_diar_id is not None:
+                active = {
+                    "kind": "diarizing",
+                    "session_id": active_diar_id,
+                    "status": "running",
+                    "diarization_progress": STATE.active_diarizer_progress.get(active_diar_id),
+                }
+
         from .installer import INSTALLER
         installer_status = INSTALLER.get_status()
         if active is None and installer_status.get("status") == "running":
@@ -519,11 +551,13 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
             summary_text = safe_read_text(s_path, root=OUT_DIR)
 
         json_path = session_dir / "transcript.json"
+        diarization_info = None
         if is_safe_regular_file(json_path):
             try:
                 j_data = json.loads(safe_read_text(json_path, root=OUT_DIR))
                 if isinstance(j_data, dict):
                     segments = j_data.get("segments", [])
+                    diarization_info = j_data.get("diarization")
             except Exception:
                 pass
 
@@ -533,6 +567,8 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
             "transcript": transcript_text,
             "summary": summary_text,
             "segments": segments,
+            "diarization": diarization_info,
+            "diarization_progress": STATE.active_diarizer_progress.get(valid_id),
         })
 
     def handle_file_download(self, subpath: str) -> None:
@@ -723,6 +759,16 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
                     cancel_event=cancel_ev,
                     on_proc_start=on_import_proc,
                 )
+                if "enable_diarize" in params or "enable_diarization" in params:
+                    en_val = params.get("enable_diarize", params.get("enable_diarization", ["0"]))[0]
+                    en = en_val in ("1", "true", "True")
+                    nspk_val = params.get("num_speakers", [None])[0]
+                    nspk = int(nspk_val) if nspk_val and nspk_val.isdigit() else None
+                    manifest.diarization_params = {
+                        "enabled": en,
+                        "num_speakers": nspk,
+                    }
+                    manifest.save()
             except Exception as exc:
                 STATE.log(f"Import failed for session {session_id} ({raw_name}): {exc}")
                 raise
@@ -758,8 +804,16 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
             manifest.language = language
         if title:
             manifest.title = title
-        if title or language:
-            save_session(manifest)
+
+        if "enable_diarize" in body or "enable_diarization" in body:
+            en = bool(body.get("enable_diarize") or body.get("enable_diarization"))
+            nspk = body.get("num_speakers")
+            manifest.diarization_params = {
+                "enabled": en,
+                "num_speakers": int(nspk) if (nspk is not None and str(nspk).isdigit()) else None,
+            }
+
+        save_session(manifest)
 
         self.send_json({"ok": True, "session_id": session_id, "manifest": manifest.to_dict()})
 
@@ -850,6 +904,15 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
                 lang = s.language or "ru"
             elif s.language != lang:
                 s.language = lang
+                save_session(s)
+
+            if "enable_diarize" in body or "enable_diarization" in body:
+                en = bool(body.get("enable_diarize") or body.get("enable_diarization"))
+                nspk = body.get("num_speakers")
+                s.diarization_params = {
+                    "enabled": en,
+                    "num_speakers": int(nspk) if (nspk is not None and str(nspk).isdigit()) else None,
+                }
                 save_session(s)
 
             def _run_bg() -> None:
@@ -1110,6 +1173,86 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
             on_finish=_on_finish,
         )
         self.send_json({"ok": True, "installer": status})
+
+    def handle_api_diarization_status(self) -> None:
+        from .installer import get_diarization_install_status
+        st = get_diarization_install_status()
+        self.send_json({"ok": True, **st})
+
+    def handle_api_installer_diarize(self, body: dict) -> None:
+        from .installer import install_diarization_components
+        force = bool(body.get("force", False))
+        res = install_diarization_components(force=force)
+        self.send_json({"ok": True, **res})
+
+    def handle_session_diarize(self, body: dict) -> None:
+        session_id = body.get("session_id")
+        if not session_id:
+            raise ValueError("session_id required")
+        valid_id = validate_session_id(session_id)
+        manifest = load_session(valid_id)
+        if not manifest:
+            raise StorageError(f"Session {valid_id} not found")
+
+        num_speakers = body.get("num_speakers")
+        if num_speakers is not None:
+            try:
+                num_speakers = int(num_speakers)
+                if num_speakers < 2 or num_speakers > 20:
+                    raise ValueError("Number of speakers must be between 2 and 20")
+            except (ValueError, TypeError):
+                raise ValueError("num_speakers must be an integer between 2 and 20 or null")
+
+        from .diarizer import Diarizer, DiarizationConfig
+        cfg = DiarizationConfig(num_speakers=num_speakers)
+        diarizer = Diarizer(config=cfg)
+
+        with STATE._workers_lock:
+            if valid_id in STATE.active_diarizers:
+                raise RuntimeError(f"Diarization is already running for session {valid_id}")
+            STATE.active_diarizers[valid_id] = diarizer
+
+        def _diarize_worker() -> None:
+            try:
+                def on_prog(p_data: dict[str, Any]) -> None:
+                    STATE.active_diarizer_progress[valid_id] = p_data
+
+                diarizer.run_session_diarization(valid_id, on_progress=on_prog)
+            except Exception as exc:
+                STATE.log(f"Diarization error for {valid_id}: {exc}")
+            finally:
+                with STATE._workers_lock:
+                    STATE.active_diarizers.pop(valid_id, None)
+
+        th = threading.Thread(target=_diarize_worker, daemon=True, name=f"diarize_{valid_id}")
+        th.start()
+        self.send_json({"ok": True, "session_id": valid_id, "status": "started"})
+
+    def handle_session_diarize_cancel(self, body: dict) -> None:
+        session_id = body.get("session_id")
+        if not session_id:
+            raise ValueError("session_id required")
+        valid_id = validate_session_id(session_id)
+        with STATE._workers_lock:
+            diarizer = STATE.active_diarizers.get(valid_id)
+        if diarizer:
+            diarizer.cancel()
+            self.send_json({"ok": True, "session_id": valid_id, "status": "cancelled"})
+        else:
+            self.send_json({"ok": True, "session_id": valid_id, "status": "idle"})
+
+    def handle_session_speakers(self, body: dict) -> None:
+        session_id = body.get("session_id")
+        if not session_id:
+            raise ValueError("session_id required")
+        valid_id = validate_session_id(session_id)
+        speakers = body.get("speakers")
+        if not isinstance(speakers, dict):
+            raise ValueError("speakers dictionary required")
+
+        from .export import update_speaker_names
+        res = update_speaker_names(valid_id, speakers)
+        self.send_json({"ok": True, **res})
 
 
 def run_server(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> tuple[ThreadingHTTPServer, threading.Thread]:

@@ -420,6 +420,7 @@ class TranscriptionManager:
 
             transcript_json_path = session_dir / "transcript.json"
             json_payload = {
+                "schema_version": 2,
                 "session_id": session_id,
                 "language": lang,
                 "model": m_path.name,
@@ -436,6 +437,23 @@ class TranscriptionManager:
             manifest.processing_pid = None
             save_session(manifest)
             self._log(f"Transcription completed: {word_count} words across {len(chunk_files)} chunk(s).")
+
+            # Check if diarization was requested
+            diar_params = getattr(manifest, "diarization_params", {}) or {}
+            if diar_params.get("enabled"):
+                try:
+                    self._log("Starting requested speaker diarization...")
+                    from .diarizer import Diarizer, DiarizationConfig
+                    cfg = DiarizationConfig(
+                        num_speakers=diar_params.get("num_speakers"),
+                    )
+                    diarizer = Diarizer(config=cfg)
+                    diarizer.run_session_diarization(session_id)
+                    manifest = load_session(session_id) or manifest
+                    self._log("Speaker diarization completed successfully.")
+                except Exception as d_exc:
+                    self._log(f"Speaker diarization failed (transcription preserved): {d_exc}")
+
             return manifest
 
         except InterruptedError as exc:

@@ -62,6 +62,8 @@
     deviceSelectGroup: el('deviceSelectGroup'),
     sessionTitleInput: el('sessionTitleInput'),
     languageSelect: el('languageSelect'),
+    diarizationEnabledCheck: el('diarizationEnabledCheck'),
+    diarizationSpeakersSelect: el('diarizationSpeakersSelect'),
     btnPreflightTest: el('btnPreflightTest'),
     preflightResult: el('preflightResult'),
     preflightSymbol: el('preflightSymbol'),
@@ -76,11 +78,13 @@
     uploadProgressText: el('uploadProgressText'),
     uploadError: el('uploadError'),
     btnUploadSubmit: el('btnUploadSubmit'),
+    btnQuickUpload: el('btnQuickUpload'),
     uploadRetryContainer: el('uploadRetryContainer'),
     btnUploadRetry: el('btnUploadRetry'),
     activeWorkSection: el('activeWorkSection'),
     btnStopCapture: el('btnStopCapture'),
     btnCancelProcess: el('btnCancelProcess'),
+    btnCancelDiarization: el('btnCancelDiarization'),
     activeControlHelp: el('activeControlHelp'),
     activeSessionId: el('activeSessionId'),
     activeElapsed: el('activeElapsed'),
@@ -89,6 +93,9 @@
     activeProgressBlock: el('activeProgressBlock'),
     activeProgressBar: el('activeProgressBar'),
     activeProgressLabel: el('activeProgressLabel'),
+    activeDiarizationProgressBlock: el('activeDiarizationProgressBlock'),
+    activeDiarizationProgressBar: el('activeDiarizationProgressBar'),
+    activeDiarizationProgressLabel: el('activeDiarizationProgressLabel'),
     sessionFilterInput: el('sessionFilterInput'),
     statusFilterSelect: el('statusFilterSelect'),
     sessionsTable: el('sessionsTable'),
@@ -109,12 +116,14 @@
     exportSrtLink: el('exportSrtLink'),
     exportVttLink: el('exportVttLink'),
     exportJsonLink: el('exportJsonLink'),
+    btnDiarizeSession: el('btnDiarizeSession'),
     btnRequestSummary: el('btnRequestSummary'),
     tabTranscript: el('tabTranscript'),
     tabSummary: el('tabSummary'),
     panelTranscript: el('panelTranscript'),
     panelSummary: el('panelSummary'),
     transcriptSearchInput: el('transcriptSearchInput'),
+    speakerLegendContainer: el('speakerLegendContainer'),
     transcriptView: el('transcriptView'),
     summaryView: el('summaryView'),
     logConsole: el('logConsole'),
@@ -172,6 +181,12 @@
     cardScenarioTranscribe: el('cardScenarioTranscribe'),
     badgeScenarioTranscribe: el('badgeScenarioTranscribe'),
     descScenarioTranscribe: el('descScenarioTranscribe'),
+    cardScenarioDiarize: el('cardScenarioDiarize'),
+    badgeScenarioDiarize: el('badgeScenarioDiarize'),
+    descScenarioDiarize: el('descScenarioDiarize'),
+    diarizationInstallerBox: el('diarizationInstallerBox'),
+    diarizationInstallerMessage: el('diarizationInstallerMessage'),
+    btnStartDiarizationInstall: el('btnStartDiarizationInstall'),
     infoWhisperVersion: el('infoWhisperVersion'),
     infoWhisperPath: el('infoWhisperPath'),
     infoModelPath: el('infoModelPath'),
@@ -992,6 +1007,20 @@
         tdStatus.appendChild(errBadge);
       }
 
+      if (s.diarization_status === 'completed' || s.has_diarization) {
+        const dBadge = document.createElement('span');
+        dBadge.className = 'badge-meta';
+        dBadge.style.marginInlineStart = 'var(--ad-space-1)';
+        dBadge.textContent = '👥 Диаризация';
+        tdStatus.appendChild(dBadge);
+      } else if (s.diarization_status === 'failed') {
+        const dBadge = document.createElement('span');
+        dBadge.className = 'status-error-inline';
+        dBadge.style.marginInlineStart = 'var(--ad-space-1)';
+        dBadge.textContent = 'Диаризация: сбой';
+        tdStatus.appendChild(dBadge);
+      }
+
       // 6. Action column
       const tdActions = document.createElement('td');
       tdActions.className = 'action-col';
@@ -1124,7 +1153,8 @@
       elements.exportVttLink.href = `/files/${encodeURIComponent(sessionId)}/transcript.vtt`;
       elements.exportJsonLink.href = `/files/${encodeURIComponent(sessionId)}/transcript.json`;
 
-      // Render Transcript from cache
+      // Render Speaker Legend and Transcript from cache
+      renderSpeakerLegend(res.manifest, res.segments, res.diarization);
       renderTranscriptEntries(res.segments, res.transcript);
 
       // Render Summary
@@ -1156,10 +1186,110 @@
     }
   }
 
-  // Render Transcript Entries using in-memory cached data (R10)
+  // Render Speaker Legend with Inline Renaming Inputs (v1.1)
+  function renderSpeakerLegend(manifest, segments, diarization) {
+    if (!elements.speakerLegendContainer) return;
+
+    // Collect speakers from manifest or diarization block
+    const rawSpeakers = (manifest && manifest.speakers && Object.keys(manifest.speakers).length > 0)
+      ? manifest.speakers
+      : (diarization && diarization.speakers ? diarization.speakers : {});
+    const speakerMap = {};
+    for (const [k, v] of Object.entries(rawSpeakers)) {
+      if (typeof v === 'object' && v !== null && v.display_name) {
+        speakerMap[k] = v.display_name;
+      } else if (typeof v === 'string') {
+        speakerMap[k] = v;
+      }
+    }
+    const seenSpeakers = new Set(Object.keys(speakerMap));
+
+    if (segments && Array.isArray(segments)) {
+      segments.forEach((seg) => {
+        const spk = seg.speaker_id || seg.speaker;
+        if (spk && spk !== 'speaker_unknown') seenSpeakers.add(spk);
+      });
+    }
+
+    if (seenSpeakers.size === 0) {
+      elements.speakerLegendContainer.hidden = true;
+      elements.speakerLegendContainer.innerHTML = '';
+      return;
+    }
+
+    elements.speakerLegendContainer.hidden = false;
+    elements.speakerLegendContainer.innerHTML = '<span class="speaker-legend-title">Голоса:</span>';
+
+    const sortedSpeakers = Array.from(seenSpeakers).sort();
+    sortedSpeakers.forEach((spkId) => {
+      let spkIdx = 1;
+      const match = spkId.match(/speaker_0*(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        spkIdx = num === 0 ? 1 : ((num - 1) % 20) + 1;
+      }
+
+      const item = document.createElement('div');
+      item.className = 'speaker-rename-item';
+
+      const badge = document.createElement('span');
+      badge.className = 'speaker-badge';
+      badge.setAttribute('data-speaker-idx', spkIdx);
+      badge.textContent = spkId;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'speaker-rename-input';
+      input.value = speakerMap[spkId] || '';
+      input.placeholder = `Говорящий ${spkIdx}`;
+      input.setAttribute('aria-label', `Имя для ${spkId}`);
+
+      let saveTimeout = null;
+      input.addEventListener('input', () => {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+          try {
+            const newName = input.value.trim();
+            speakerMap[spkId] = newName;
+            await apiPost('/api/session/speakers', {
+              session_id: inspectedSessionId,
+              speakers: speakerMap,
+            });
+            if (inspectedSessionData) {
+              if (inspectedSessionData.manifest) {
+                inspectedSessionData.manifest.speakers = { ...speakerMap };
+              }
+              if (inspectedSessionData.diarization) {
+                inspectedSessionData.diarization.speakers = { ...speakerMap };
+              }
+            }
+            // Re-render entries to update names immediately
+            renderTranscriptEntries(inspectedSessionData?.segments, inspectedSessionData?.transcript);
+          } catch (err) {
+            console.error('Failed to update speaker name:', err);
+          }
+        }, 400);
+      });
+
+      item.appendChild(badge);
+      item.appendChild(input);
+      elements.speakerLegendContainer.appendChild(item);
+    });
+  }
+
+  // Render Transcript Entries using in-memory cached data with speaker badges (v1.1)
   function renderTranscriptEntries(segments, fallbackText) {
     elements.transcriptView.innerHTML = '';
     const query = elements.transcriptSearchInput.value.trim().toLowerCase();
+    const rawMap = inspectedSessionData?.manifest?.speakers || inspectedSessionData?.diarization?.speakers || {};
+    const speakerMap = {};
+    for (const [k, v] of Object.entries(rawMap)) {
+      if (typeof v === 'object' && v !== null && v.display_name) {
+        speakerMap[k] = v.display_name;
+      } else if (typeof v === 'string') {
+        speakerMap[k] = v;
+      }
+    }
 
     if (segments && segments.length > 0) {
       let matchCount = 0;
@@ -1178,11 +1308,37 @@
         timeSpan.className = 'transcript-time';
         timeSpan.textContent = `[${formatSec(fromSec)}]`;
 
+        // Speaker badge
+        const spkWrapper = document.createElement('span');
+        const spk = seg.speaker_id || seg.speaker;
+        if (spk && spk !== 'speaker_unknown') {
+          const badge = document.createElement('span');
+          badge.className = 'speaker-badge';
+          let spkIdx = 1;
+          const match = spk.match(/speaker_0*(\d+)/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            spkIdx = num === 0 ? 1 : ((num - 1) % 20) + 1;
+          }
+          badge.setAttribute('data-speaker-idx', spkIdx);
+          const customName = speakerMap[spk];
+          badge.textContent = customName || `Говорящий ${spkIdx}`;
+          spkWrapper.appendChild(badge);
+        }
+
+        if (seg.overlap) {
+          const overlapSpan = document.createElement('span');
+          overlapSpan.className = 'overlap-tag';
+          overlapSpan.textContent = 'Наложение';
+          spkWrapper.appendChild(overlapSpan);
+        }
+
         const textSpan = document.createElement('span');
         textSpan.className = 'transcript-text';
         textSpan.textContent = text;
 
         row.appendChild(timeSpan);
+        row.appendChild(spkWrapper);
         row.appendChild(textSpan);
         elements.transcriptView.appendChild(row);
       });
@@ -1375,12 +1531,41 @@
             elements.activeControlHelp.hidden = false;
             elements.activeControlHelp.textContent = 'Выполняется генерация саммари. Другие операции временно заблокированы.';
           }
+        } else if (active.kind === 'diarizing') {
+          recordingStartTime = null;
+          updateSystemStatus('working', 'Идёт диаризация голосов');
+          elements.btnPrimaryStart.hidden = false;
+          elements.btnStopCapture.hidden = true;
+          elements.btnCancelProcess.hidden = true;
+          if (elements.btnCancelDiarization) elements.btnCancelDiarization.hidden = false;
+          elements.activeProgressBlock.hidden = true;
+          if (elements.activeDiarizationProgressBlock) elements.activeDiarizationProgressBlock.hidden = false;
+          elements.activeProgressBar.setAttribute('aria-busy', 'false');
+          if (elements.activeDiarizationProgressBar) {
+            elements.activeDiarizationProgressBar.setAttribute('aria-busy', 'true');
+            const dprog = data.diarization_progress || active.diarization_progress || active.progress;
+            if (dprog && dprog.total_windows) {
+              elements.activeDiarizationProgressBar.value = dprog.current_window || 0;
+              elements.activeDiarizationProgressBar.max = dprog.total_windows || 1;
+              if (elements.activeDiarizationProgressLabel) {
+                elements.activeDiarizationProgressLabel.textContent = `Диаризация: окно ${dprog.current_window || 0} из ${dprog.total_windows}`;
+              }
+            } else if (elements.activeDiarizationProgressLabel) {
+              elements.activeDiarizationProgressLabel.textContent = 'Диаризация речи...';
+            }
+          }
+          elements.activeElapsed.textContent = '—';
+          if (elements.activeControlHelp) {
+            elements.activeControlHelp.hidden = false;
+            elements.activeControlHelp.textContent = 'Выполняется разделение говорящих по окнам. Распознанный текст уже сохранён.';
+          }
         } else if (active.kind === 'install') {
           recordingStartTime = null;
           updateSystemStatus('working', 'Идёт установка компонентов');
           elements.btnPrimaryStart.hidden = true;
           elements.btnStopCapture.hidden = true;
           elements.btnCancelProcess.hidden = true;
+          if (elements.btnCancelDiarization) elements.btnCancelDiarization.hidden = true;
           elements.activeProgressBlock.hidden = false;
           elements.activeEtaBlock.hidden = true;
           elements.activeProgressBar.removeAttribute('value');
@@ -1399,6 +1584,7 @@
         }
       } else {
         elements.activeProgressBar.setAttribute('aria-busy', 'false');
+        if (elements.activeDiarizationProgressBar) elements.activeDiarizationProgressBar.setAttribute('aria-busy', 'false');
         activeSessionId = null;
         activeOperationKind = null;
         recordingStartTime = null;
@@ -1407,6 +1593,8 @@
         elements.btnPrimaryStart.hidden = false;
         elements.btnStopCapture.hidden = true;
         elements.btnCancelProcess.hidden = true;
+        if (elements.btnCancelDiarization) elements.btnCancelDiarization.hidden = true;
+        if (elements.activeDiarizationProgressBlock) elements.activeDiarizationProgressBlock.hidden = true;
         if (elements.activeControlHelp) {
           elements.activeControlHelp.hidden = true;
         }
@@ -1532,7 +1720,14 @@
 
     const xhr = new XMLHttpRequest();
     xhr.timeout = 300000; // 300s timeout for large uploads
-    xhr.open('POST', `/api/upload?name=${encodeURIComponent(file.name)}`);
+    const diarizeEn = Boolean(elements.diarizationEnabledCheck?.checked);
+    const spkVal = elements.diarizationSpeakersSelect?.value || '0';
+    let uploadUrl = `/api/upload?name=${encodeURIComponent(file.name)}`;
+    if (diarizeEn) {
+      uploadUrl += `&enable_diarize=1`;
+      if (spkVal !== '0') uploadUrl += `&num_speakers=${encodeURIComponent(spkVal)}`;
+    }
+    xhr.open('POST', uploadUrl);
     xhr.setRequestHeader('X-CSRF-Token', csrfToken);
 
     xhr.upload.onprogress = (evt) => {
@@ -1689,11 +1884,17 @@
       const devIdx = elements.deviceSelect.value ? parseInt(elements.deviceSelect.value, 10) : null;
       const titleVal = (elements.sessionTitleInput?.value || '').trim();
       const langVal = elements.languageSelect?.value || 'ru';
+      const diarizeEn = Boolean(elements.diarizationEnabledCheck?.checked);
+      const spkVal = elements.diarizationSpeakersSelect?.value || '0';
+      const numSpk = spkVal === '0' ? null : parseInt(spkVal, 10);
+
       await apiPost('/api/record/start', {
         source_kind: kind,
         device_index: devIdx,
         title: titleVal || null,
         language: langVal,
+        enable_diarize: diarizeEn,
+        num_speakers: numSpk,
       });
       await pollStatus();
     } catch (e) {
@@ -1719,6 +1920,54 @@
       alert(`Ошибка отмены: ${e.message}`);
     }
   });
+
+  if (elements.btnCancelDiarization) {
+    elements.btnCancelDiarization.addEventListener('click', async () => {
+      try {
+        await apiPost('/api/session/diarize/cancel', { session_id: activeSessionId });
+        await pollStatus();
+      } catch (e) {
+        alert(`Ошибка отмены диаризации: ${e.message}`);
+      }
+    });
+  }
+
+  if (elements.btnDiarizeSession) {
+    elements.btnDiarizeSession.addEventListener('click', async () => {
+      if (!inspectedSessionId) return;
+      try {
+        await apiPost('/api/session/diarize', { session_id: inspectedSessionId });
+        await pollStatus();
+      } catch (e) {
+        alert(`Ошибка запуска диаризации: ${e.message}`);
+      }
+    });
+  }
+
+  if (elements.diarizationEnabledCheck) {
+    elements.diarizationEnabledCheck.addEventListener('change', () => {
+      if (elements.diarizationSpeakersSelect) {
+        elements.diarizationSpeakersSelect.disabled = !elements.diarizationEnabledCheck.checked;
+      }
+    });
+  }
+
+  if (elements.btnStartDiarizationInstall) {
+    elements.btnStartDiarizationInstall.addEventListener('click', async () => {
+      try {
+        elements.btnStartDiarizationInstall.disabled = true;
+        if (elements.diarizationInstallerMessage) {
+          elements.diarizationInstallerMessage.textContent = 'Запуск установки компонентов диаризации...';
+        }
+        await apiPost('/api/installer/diarize');
+        await fetchSettings(true);
+      } catch (e) {
+        alert(`Ошибка установки: ${e.message}`);
+      } finally {
+        elements.btnStartDiarizationInstall.disabled = false;
+      }
+    });
+  }
 
   elements.btnPreflightTest.addEventListener('click', () => loadPreflight(true));
 
@@ -1749,6 +1998,18 @@
     loadPreflight(false);
     updateToolWarning();
   });
+
+  if (elements.btnQuickUpload) {
+    elements.btnQuickUpload.addEventListener('click', () => {
+      if (elements.sourceSelect) {
+        elements.sourceSelect.value = 'upload';
+        elements.sourceSelect.dispatchEvent(new Event('change'));
+      }
+      if (elements.audioFileInput) {
+        elements.audioFileInput.focus();
+      }
+    });
+  }
 
   elements.audioFileInput.addEventListener('change', () => {
     if (elements.uploadError) {
@@ -2326,6 +2587,31 @@
         renderInstallerState(instData);
       } catch (_) {}
 
+      // Check diarization status (v1.1)
+      try {
+        const diarData = await apiGet('/api/diarization/status');
+        const dReady = diarData && diarData.ready;
+        if (elements.badgeScenarioDiarize) {
+          elements.badgeScenarioDiarize.textContent = dReady ? '✓ Готов' : '✕ Не установлен';
+          elements.badgeScenarioDiarize.className = `readiness-badge ${dReady ? 'readiness-badge-ready' : 'readiness-badge-error'}`;
+        }
+        if (elements.descScenarioDiarize) {
+          elements.descScenarioDiarize.textContent = dReady
+            ? 'Компоненты sherpa-onnx, pyannote и eres2net готовы к локальной диаризации.'
+            : 'Отсутствуют модели или библиотеки sherpa-onnx. Нажмите «Установить компоненты диаризации».';
+        }
+        if (elements.diarizationInstallerMessage) {
+          elements.diarizationInstallerMessage.textContent = dReady
+            ? 'Все компоненты диаризации (библиотека C-API, бинарник, модели сегментации и эмбеддингов) установлены.'
+            : (diarData.missing?.length ? `Отсутствуют компоненты: ${diarData.missing.join(', ')}.` : 'Компоненты не установлены.');
+        }
+        if (elements.btnStartDiarizationInstall) {
+          elements.btnStartDiarizationInstall.textContent = dReady
+            ? 'Переустановить компоненты диаризации'
+            : 'Установить компоненты диаризации';
+        }
+      } catch (_) {}
+
     } catch (err) {
       showSettingsAlert(`Не удалось загрузить настройки: ${err.message}`, 'error');
     } finally {
@@ -2795,16 +3081,16 @@
     }
     hideTooltipGlobal = hideTooltip;
 
-    document.addEventListener('pointerenter', (e) => {
+    const handleEnter = (e) => {
       const data = getTooltipData(e.target);
       if (!data) return;
       if (activeTarget === data.el && activeTooltip && activeTooltip.classList.contains('is-visible')) {
         return;
       }
       showTooltip(data.el);
-    }, true);
+    };
 
-    document.addEventListener('pointerleave', (e) => {
+    const handleLeave = (e) => {
       if (!activeTarget) return;
       if (e.relatedTarget && (activeTarget === e.relatedTarget || activeTarget.contains(e.relatedTarget))) {
         return;
@@ -2812,7 +3098,13 @@
       if (e.target === activeTarget || activeTarget.contains(e.target)) {
         hideTooltip();
       }
-    }, true);
+    };
+
+    document.addEventListener('pointerenter', handleEnter, true);
+    document.addEventListener('pointerover', handleEnter, true);
+
+    document.addEventListener('pointerleave', handleLeave, true);
+    document.addEventListener('pointerout', handleLeave, true);
 
     document.addEventListener('focusin', (e) => {
       showTooltip(e.target);
@@ -2847,8 +3139,22 @@
     }, true);
 
     window.addEventListener('scroll', () => {
-      if (activeTooltip && activeTooltip.classList.contains('is-visible')) {
-        hideTooltip();
+      if (activeTooltip && activeTooltip.classList.contains('is-visible') && activeTarget) {
+        const rect = activeTarget.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+          hideTooltip();
+        } else {
+          const tooltipRect = activeTooltip.getBoundingClientRect();
+          let top = rect.top - tooltipRect.height - 8;
+          if (top < 8) top = rect.bottom + 8;
+          if (top + tooltipRect.height > window.innerHeight - 8) {
+            top = Math.max(8, window.innerHeight - tooltipRect.height - 8);
+          }
+          let left = rect.left + (rect.width - tooltipRect.width) / 2;
+          left = Math.max(8, Math.min(window.innerWidth - tooltipRect.width - 8, left));
+          activeTooltip.style.top = `${Math.round(top)}px`;
+          activeTooltip.style.left = `${Math.round(left)}px`;
+        }
       }
     }, { passive: true });
   }
