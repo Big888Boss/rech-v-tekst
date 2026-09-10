@@ -52,7 +52,7 @@
         <div class="spinner" id="spinner"></div>
         <h2 id="status-title">Запуск сервера...</h2>
         <p id="status-text">Пожалуйста, подождите, мы готовим окружение.</p>
-        
+
         <div id="error-container">
             <h2 style="color: #ff3b30;">Ошибка запуска</h2>
             <p id="error-details">Сервер не отвечает.</p>
@@ -72,7 +72,7 @@
                 showError("Порт не передан.");
                 return;
             }
-            
+
             attempts++;
             document.getElementById('spinner').style.display = 'block';
             document.getElementById('error-container').style.display = 'none';
