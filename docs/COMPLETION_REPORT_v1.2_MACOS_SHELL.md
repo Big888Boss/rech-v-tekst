@@ -4,28 +4,26 @@
 - **Executor:** Antigravity
 - **Primary Model Selected:** Gemini 3.1 Pro
 - **Base Commit SHA:** `dd077016df497885ad3f0f67b562efdb637dc37c`
-- **Previous SHA:** `05f43f2`
-- **Current HEAD SHA:** См. `git log` (5-й финальный коммит).
+- **Previous SHA:** `90761c8`
+- **Current HEAD SHA:** См. `git log` (6-й финальный коммит).
 - **Codex Implementation Status:** PROHIBITED
 - **Final Status:** READY FOR ACCEPTANCE
 
-## Делегированный скоуп (Исправления по P0, итерация 4: STARTUP UX)
-- **Inline Loading UI:** `webview.create_window()` теперь вызывается мгновенно (до старта сервера) с вшитым русским HTML.
-- **Параллельный запуск:** Сервер (`ensure_private_out_dir`, `reconcile`, `ThreadingHTTPServer`) запускается в параллельном демоническом потоке (`ServerLauncher.start_async()`).
-- **Обработка ошибок:** В случае ошибки импорта или бинда порта `pywebview` через `window.evaluate_js` выводит текст ошибки и показывает кнопку "Повторить попытку".
-- **Retry API & Дедупликация:** Метод `pywebview.api.retry()` запускает повторную попытку. Введен `threading.Lock` для защиты от создания дубликатов серверов при спаме кнопки повтора.
-- **Безопасная навигация:** При успешном старте окно перенаправляется на `http://127.0.0.1:<port>/`, сохраняя изоляцию и CSRF origin.
-- **Таймаут:** Ожидание запуска ограничено жестким таймаутом (`watchdog` 10 секунд).
+## Делегированный скоуп (Исправления по P0, итерация 5: Race Condition)
+- **Токены отмены (Cancel Tokens):** В `ServerLauncher` введена монотонная переменная `_attempt_id`. Попытка может изменять UI и `http_server` только если она остается актуальной. Запоздалые серверы от тайм-аутов закрываются (`server_close()`), предотвращая утечки портов.
+- **Безопасный JSON:** Все сообщения об ошибках для UI кодируются через `json.dumps(msg, ensure_ascii=False)`.
+- **Валидация запуска:** Проверяется результат функции старта сервера: при `None` или отсутствии API `serve_forever`/`server_close` выводится читаемая ошибка вместо падения потока.
+- **Утечка fcntl:** При неудаче захвата Single-Instance Lock файловый дескриптор `os.close(fd)` корректно закрывается, ссылка очищается.
+- **Изоляция тестов:** В `test_macos_startup_ux.py` добавлен `sys.path.insert`, что позволяет запускать тесты напрямую без ручного проброса `PYTHONPATH`.
 
 ## Статистика и артефакты
 - **Размер приложения:** ~15 MB (`dist/Речь в текст.app`)
 - **Запускатели:** Основной — `Start-App.command`.
-- Контрольная сумма `dist/checksum.txt` пересобрана.
+- Контрольная сумма `dist/checksum.txt` пересобрана после внесения изменений.
 
 ## Тестирование и Evidence
-- Написаны 5 новых детерминированных тестов (`tests/test_macos_startup_ux.py`), симулирующих таймауты, падения и успешные запуски.
-- Все 8 тестов (жизненный цикл + startup UX) успешно пройдены.
-- Регрессии v1.1 пройдены (`PYTHONPATH=.`).
+- Добавлены новые детерминированные тесты (`test_stale_startup_abandoned`, `test_invalid_startup_return`).
+- Итого **10 тестов** (жизненный цикл + startup UX + гонки) успешно пройдены локально через `.venv/bin/pytest`.
 - **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` для среды Root runtime из-за ограничений headless (ошибка `could not create image from display`).
 
-Завершено: создан отдельный пятый коммит без amend.
+Завершено: создан отдельный шестой коммит без amend.

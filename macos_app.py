@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import fcntl
+import json
 from http.server import ThreadingHTTPServer
 import webview
 
@@ -74,6 +75,12 @@ def acquire_single_instance_lock():
         fcntl.flock(instance_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         return True
     except IOError:
+        if instance_lock_fd is not None:
+            try:
+                os.close(instance_lock_fd)
+            except Exception:
+                pass
+            instance_lock_fd = None
         return False
 
 class ServerLauncher:
@@ -84,7 +91,7 @@ class ServerLauncher:
         self.server_port = None
         self.lock = threading.Lock()
         self._timeout = 10.0
-        self._startup_attempts = 0
+        self._attempt_id = 0
 
     def _startup_func(self):
         # Allow tests to mock this safely
@@ -101,7 +108,8 @@ class ServerLauncher:
             if self.is_starting or self.http_server is not None:
                 return False
             self.is_starting = True
-            self._startup_attempts += 1
+            self._attempt_id += 1
+            current_id = self._attempt_id
 
         if self.window:
             self.window.evaluate_js("showLoading()")
@@ -111,21 +119,25 @@ class ServerLauncher:
             server = None
             try:
                 server = self._startup_func()
+                if not server or not hasattr(server, 'server_port') or not hasattr(server, 'serve_forever') or not hasattr(server, 'server_close'):
+                    raise ValueError("Функция запуска не вернула корректный объект сервера.")
             except Exception as e:
                 error_msg = str(e)
 
             with self.lock:
-                if not self.is_starting:
-                    # Watchdog timed out before we finished
+                if self._attempt_id != current_id or not self.is_starting:
+                    # Watchdog timed out before we finished, or we are a stale generation
                     if server:
-                        server.server_close()
+                        try:
+                            server.server_close()
+                        except Exception:
+                            pass
                     return
 
                 if error_msg:
                     self.is_starting = False
                     if self.window:
-                        safe_msg = error_msg.replace("'", "\\'").replace("\\", "\\\\")
-                        self.window.evaluate_js(f"showError('{safe_msg}')")
+                        self.window.evaluate_js(f"showError({json.dumps('Ошибка: ' + error_msg, ensure_ascii=False)})")
                 else:
                     self.http_server = server
                     self.server_port = server.server_port
@@ -141,10 +153,10 @@ class ServerLauncher:
         def watchdog():
             startup_thread.join(timeout=self._timeout)
             with self.lock:
-                if self.is_starting and startup_thread.is_alive():
+                if self._attempt_id == current_id and self.is_starting and startup_thread.is_alive():
                     self.is_starting = False
                     if self.window:
-                        self.window.evaluate_js("showError('Таймаут запуска сервера.')")
+                        self.window.evaluate_js(f"showError({json.dumps('Таймаут запуска сервера.', ensure_ascii=False)})")
 
         threading.Thread(target=watchdog, daemon=True).start()
         return True
