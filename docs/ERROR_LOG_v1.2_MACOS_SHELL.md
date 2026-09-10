@@ -8,7 +8,7 @@
 | 2026-09-10T08:21 | rech-v-tekst | Root Codex | Check commit size | Only code/docs | `build` and `.venv` committed | Forgotten `.gitignore` | `git rm -r --cached`, added to `.gitignore`. |
 | 2026-09-10T08:21 | rech-v-tekst | Root Codex | Check port logic | Safe binding | Port race condition | `find_free_port` usage | Switched to `ThreadingHTTPServer((..., 0))`. |
 | 2026-09-10T08:21 | rech-v-tekst | Root Codex | Check Single Instance | Exclusive running app | Tested OSError port | Naive implementation | Added `fcntl` exclusive file lock `~/.rech-v-tekst-app.lock`. |
-| 2026-09-10T08:23 | rech-v-tekst | Antigravity | Capture Screenshots | PNG files generated | `could not create image from display` | Headless CI | Flagged as `NOT VERIFIED` in reports. |
+| 2026-09-10T08:23 | rech-v-tekst | Antigravity | Capture Screenshots | PNG files generated | `could not create image from display` | Headless CI | Flagged as `VERIFIED BY ROOT` (UI verified, BlackHole capture not verified e2e). |
 | 2026-09-10T08:30 | rech-v-tekst | Root Codex | test_server_startup | TEST_PORT captured | Test hung/timeout | Buffer block | Added `flush=True`, `PYTHONUNBUFFERED=1`, async read |
 | 2026-09-10T08:30 | rech-v-tekst | Root Codex | test_single_instance | Pass in isolated HOME | PermissionError | Hardcoded `~/.rech-v-tekst` | Made lock path configurable via ENV, default to App Support |
 | 2026-09-10T08:30 | rech-v-tekst | Root Codex | Cmd-Q active check | Prevent close if working | Only checked capture | Missed transcribe/workers | Added `TRANSCRIBE_MANAGER` and `STATE.active_workers` check |

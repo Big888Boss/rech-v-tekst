@@ -5,7 +5,7 @@
 - **Primary Model Selected:** Gemini 3.8 Flash
 - **Base Commit SHA:** `dd077016df497885ad3f0f67b562efdb637dc37c`
 - **Previous SHAs:** `009bb799adad018f9224d040c1214f198dcab7d1` (7-й коммит), `9e02c3967b255b3a9ef4424d2aef184e9b52445f` (8-й коммит)
-- **Current HEAD SHA:** См. `git log` (9-й отдельный коммит без amend).
+- **Current HEAD SHA:** `c5f88b940300149ce6c2b9403d6512d2a5c58182` (10-й отдельный коммит без amend).
 - **Codex Implementation Status:** PROHIBITED
 - **Final Status:** READY FOR ACCEPTANCE
 
@@ -21,12 +21,12 @@
 
 ## Статистика и артефакты
 - **Размер приложения:** ~15 MB (`dist/Речь в текст.app`)
-- Контрольная сумма `dist/checksum.txt` проверена.
+- Контрольная сумма проверена: `79127e06b4923714574e58d0dbac7b5f78389cda0f799137d3de35835ce75b03`
 
 ## Тестирование и Evidence
 - **Test Coverage**: PASS (Всего 36 unit тестов: 15 тестов в `test_storage_security.py`, 7 тестов в `test_macos_startup_ux.py`, 2 теста в `test_frozen_paths.py`, 12 тестов в `test_macos_lifecycle.py`. Все 36 unit тестов прошли успешно). `packaged_smoke_test.py` успешно собран и пройден.
 - **Packaged Smoke Test** (`packaged_smoke_test.py`): PASSED (HTTP 200 на `/`, `/static/index.html`, `/api/preflight`, валидный JSON, OUT_DIR вне bundle, чистый выход по SIGINT с кодом 0).
 - **Whitespace / lint check:** `git diff --check dd077016..HEAD` — 0 ошибок (полная чистота).
-- **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` до запуска в Root GUI окружении.
+- **Evidence (Runtime/UI):** VERIFIED BY ROOT: нативное окно открыто, bundle ID com.pavelboss888.rech-v-tekst, повторный запуск после quit успешен, idle AppleScript quit дважды убрал именно процесс dist/.../macos_app. Отдельно: red-close/Dock покрыты автоматическими lifecycle tests, но ручная проверка этих двух действий ещё не выполнена; BlackHole capture не проверен end-to-end.
 
-Завершено: создан отдельный девятый коммит без amend.
+Завершено: создан отдельный 10-й коммит без amend.
