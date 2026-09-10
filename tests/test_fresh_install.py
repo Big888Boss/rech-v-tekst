@@ -172,7 +172,6 @@ class TestFreshInstallDiarization(IsolatedTestCase):
             patch.object(ri, "BASE_DIR", self.fake_base),
             patch.object(ri, "MODELS_DIR", self.fake_models),
             patch.object(rd, "BASE_DIR", self.fake_base),
-            
             patch.object(rd, "WORK_BIN_DIR", self.fake_bin),
             patch.object(rd, "WORK_LIB_DIR", self.fake_lib),
             patch.object(rd, "DIARIZATION_MODELS_DIR", self.fake_models / "diarization"),
