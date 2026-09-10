@@ -2,28 +2,36 @@
 
 ## Общая информация
 - **Executor:** Antigravity
-- **Primary Model Selected:** Gemini 3.1 Pro
+- **Primary Model Selected:** Gemini 3.8 Flash
 - **Base Commit SHA:** `dd077016df497885ad3f0f67b562efdb637dc37c`
-- **Previous SHA:** `009bb79`
-- **Current HEAD SHA:** См. `git log` (8-й финальный коммит).
+- **Previous SHAs:** `009bb799adad018f9224d040c1214f198dcab7d1` (7-й коммит), `9e02c3967b255b3a9ef4424d2aef184e9b52445f` (8-й коммит)
+- **Current HEAD SHA:** См. `git log` (9-й отдельный коммит без amend).
 - **Codex Implementation Status:** PROHIBITED
 - **Final Status:** READY FOR ACCEPTANCE
 
-## Делегированный скоуп (Исправления по P0, итерация 7: Security Contract & Smoke Test Enhancements)
-- **Восстановление Security Contract:** В `recorder/storage.py` добавлена функция `ensure_readonly_root_dir`, которая аппаратно проверяет, что корневой путь `STATIC_DIR` существует, является директорией и не является симлинком (используя `lstat`). Данный валидатор не пытается вызывать `chmod 0o700` или писать данные.
-- **Fail-Fast Smoke Test:** Скрипт `packaged_smoke_test.py` переработан:
-  - Любой `exception` или `not port` немедленно вызывает `proc.kill()`, `proc.communicate(timeout=5)` и `sys.exit(1)`.
-  - Запрашивается точный путь `/static/index.html` и `/`.
-  - Парсится ответ `/api/preflight` через `json.loads` с жесткими `assert` на формат словаря и `ok: True`.
-  - Успешный `SIGINT` возвращает `0`.
+## Делегированный скоуп (P0 Test Restoration, 9-я итерация)
+- **Устранение второго инцидента потери данных в тестах (Root-detected):** В коммите `9e02c39` файл `tests/test_storage_security.py` был случайно перезаписан (сокращен с 229/213 строк до 46 строк, утратив все 11 оригинальных тестов безопасности).
+- **Полное восстановление и аппенд:**
+  - `tests/test_storage_security.py` полностью восстановлен из родительского коммита `009bb799`.
+  - 4 теста для `ensure_readonly_root_dir` добавлены в конец файла без удаления или модификации исходных тестов.
+  - Диф относительно `009bb799` содержит исключительно добавления: 44 additions, 0 deletions.
+  - Размер файла: 257 строк / 9894 байт (больше родителя `009bb799`: 213 строк / 8558 байт).
+  - Скрипт `update_storage.py` отсутствует.
+  - Сохранены все исправления в `recorder/storage.py` (валидатор `ensure_readonly_root_dir`) и `packaged_smoke_test.py` (fail-fast проверки).
 
 ## Статистика и артефакты
 - **Размер приложения:** ~15 MB (`dist/Речь в текст.app`)
-- Контрольная сумма `dist/checksum.txt` пересобрана.
+- Контрольная сумма `dist/checksum.txt` проверена.
 
 ## Тестирование и Evidence
-- Добавлен набор регрессионных тестов `test_storage_security.py` (4 теста), доказывающих отклонение симлинков корня через `lstat` в `STATIC_DIR`. Суммарно 16 unit тестов.
-- **Packaged Smoke Test** (`packaged_smoke_test.py`) успешно завершен без ошибок.
+- **Unit тесты (27 passed):**
+  - `tests/test_storage_security.py`: 15 passed (11 оригинальных + 4 `ensure_readonly_root_dir`).
+  - `tests/test_macos_startup_ux.py`: 7 passed.
+  - `tests/test_frozen_paths.py`: 2 passed.
+  - `tests/test_macos_lifecycle.py`: 3 passed.
+  - Итого: **27 passed** из 27.
+- **Packaged Smoke Test** (`packaged_smoke_test.py`): PASSED (HTTP 200 на `/`, `/static/index.html`, `/api/preflight`, валидный JSON, OUT_DIR вне bundle, чистый выход по SIGINT с кодом 0).
+- **Whitespace / lint check:** `git diff --check dd077016..HEAD` — 0 ошибок (полная чистота).
 - **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` до запуска в Root GUI окружении.
 
-Завершено: создан отдельный восьмой коммит без amend.
+Завершено: создан отдельный девятый коммит без amend.
