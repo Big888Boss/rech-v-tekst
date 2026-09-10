@@ -15,7 +15,31 @@ import uuid
 from pathlib import Path
 from typing import Any, Callable
 
-from .constants import BASE_DIR, DEFAULT_MODEL_PATH, MODELS_DIR
+from .constants import (
+    BASE_DIR,
+    DEFAULT_MODEL_PATH,
+    MODELS_DIR,
+    WORK_BIN_DIR,
+    WORK_LIB_DIR,
+    DIARIZATION_MODELS_DIR,
+    SHERPA_BIN_NAME,
+    SHERPA_LIB_NAME,
+    ONNXRUNTIME_LIB_NAME,
+    PYANNOTE_SEG_MODEL_NAME,
+    ERES2NET_EMB_MODEL_NAME,
+    PINNED_SHERPA_ARM64_STATIC_URL,
+    PINNED_SHERPA_ARM64_STATIC_SHA256,
+    PINNED_SHERPA_ARM64_BINARY_SHA256,
+    PINNED_SHERPA_ARM64_SHARED_LIB_URL,
+    PINNED_SHERPA_ARM64_SHARED_LIB_SHA256,
+    PINNED_SEGMENTATION_URL,
+    PINNED_SEGMENTATION_ARCHIVE_SHA256,
+    PINNED_SEGMENTATION_MODEL_SHA256,
+    PINNED_SEGMENTATION_MODEL_SIZE,
+    PINNED_EMBEDDING_URL,
+    PINNED_EMBEDDING_MODEL_SHA256,
+    PINNED_EMBEDDING_MODEL_SIZE,
+)
 from .lock import GLOBAL_LOCK, LockBusyError
 from .media_tools import (
     CATALOG_MODEL_NAME,
@@ -45,7 +69,8 @@ PINNED_MODEL_SIZE = CATALOG_MODEL_SIZE
 PINNED_MODEL_SHA256 = CATALOG_MODEL_SHA256
 MODEL_DOWNLOAD_DEADLINE_SEC = 1800  # 30 minutes overall download deadline
 
-REQUIRED_DISK_BYTES = 3 * 1024 * 1024 * 1024  # 3.0 GB
+REQUIRED_DISK_BYTES = 4 * 1024 * 1024 * 1024  # 4.0 GB (Whisper model + whisper-cli + diarization models + runtime libs)
+
 
 
 class InstallerManager:
@@ -271,18 +296,41 @@ class InstallerManager:
             if binary_needs_build:
                 self._build_whisper_static(target_whisper)
 
-            # Step 5: Final preflight verification
+            # Step 5: Install diarization components on supported arm64 platform
+            import platform
+            is_arm64 = platform.machine() == "arm64"
+            if is_arm64:
+                self._set_stage("downloading_diarization", "Подготовка и проверка компонентов диаризации...", 92.0)
+                def _diar_cb(stage: str, msg: str, pct: float) -> None:
+                    # scale pct (0-100) into 92.0 - 98.0 range
+                    overall_pct = 92.0 + (pct * 0.06)
+                    self._set_stage(stage, msg, overall_pct)
+
+                install_diarization_components(
+                    force=force,
+                    progress_cb=_diar_cb,
+                    cancel_check=lambda: self._cancel_requested,
+                )
+
+            # Step 6: Final preflight verification
             invalidate_media_tools_cache()
             ready, _, w_ver, _ = verify_whisper_engine(str(target_whisper), force_recheck=True)
             m_info = verify_whisper_model(target_model, force_recheck=True)
             if not (ready and m_info["ready"]):
                 raise RuntimeError("Финальная верификация установленных компонентов не удалась")
 
+            diar_msg = ""
+            if is_arm64:
+                d_stat = get_diarization_install_status()
+                if not d_stat["ready"]:
+                    raise RuntimeError(f"Верификация диаризации не удалась: {', '.join(d_stat.get('errors', []))}")
+                diar_msg = " и диаризации (sherpa-onnx)"
+
             with self._lock:
                 self._state["status"] = "completed"
                 self._state["stage"] = "completed"
                 self._state["progress_percent"] = 100.0
-                self._state["message"] = f"Компоненты распознавания успешно установлены и проверены ({w_ver})!"
+                self._state["message"] = f"Компоненты распознавания{diar_msg} успешно установлены и проверены ({w_ver})!"
                 self._state["finished_at"] = time.time()
 
         except Exception as exc:
@@ -556,8 +604,134 @@ def get_diarization_install_status() -> dict[str, Any]:
     return status
 
 
-def install_diarization_components(force: bool = False) -> dict[str, Any]:
-    """Install or verify pinned sherpa-onnx binary, library, and models."""
+def _download_file(
+    url: str,
+    target_path: Path,
+    expected_sha256: str,
+    expected_size: int | None = None,
+    timeout_sec: float = 600.0,
+    cancel_check: Callable[[], bool] | None = None,
+    progress_cb: Callable[[str, str, float], None] | None = None,
+    stage_name: str = "downloading_diarization",
+    label: str = "файла",
+) -> None:
+    """Download a remote file into a secure staging part file, verify SHA-256 and rename atomically."""
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    part_name = f".{target_path.name}.part.{os.getpid()}.{uuid.uuid4().hex[:8]}"
+    part_path = target_path.parent / part_name
+
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+
+    fd = os.open(part_path, flags, 0o600)
+    fd_closed = False
+    success = False
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "webinar-recorder-installer/1.1 (macOS; arm64)"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            content_len_hdr = resp.headers.get("Content-Length")
+            total_size = int(content_len_hdr) if content_len_hdr else (expected_size or 0)
+
+            with os.fdopen(fd, "wb", closefd=True) as f:
+                fd_closed = True
+                downloaded = 0
+                start_time = time.time()
+                deadline = start_time + timeout_sec
+                last_update = start_time
+                h = hashlib.sha256()
+
+                chunk_size = 512 * 1024  # 512 KB
+                while True:
+                    if cancel_check and cancel_check():
+                        raise InterruptedError(f"Загрузка {label} отменена пользователем")
+                    if time.time() > deadline:
+                        raise TimeoutError(f"Превышен лимит времени на загрузку {label} ({timeout_sec} сек)")
+                    chunk = resp.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    h.update(chunk)
+                    downloaded += len(chunk)
+
+                    now = time.time()
+                    if progress_cb and (now - last_update >= 0.5 or (total_size and downloaded >= total_size)):
+                        pct = (downloaded / total_size * 100.0) if total_size > 0 else 0.0
+                        mb_done = round(downloaded / (1024 * 1024), 1)
+                        mb_tot = round(total_size / (1024 * 1024), 1) if total_size > 0 else "?"
+                        progress_cb(stage_name, f"Загрузка {label}: {mb_done}/{mb_tot} МБ", min(pct, 99.0))
+                        last_update = now
+
+                f.flush()
+
+        actual_size = part_path.stat().st_size
+        if expected_size is not None and actual_size != expected_size:
+            raise ValueError(f"Размер скачанного {label} ({actual_size} байт) не совпадает с ожидаемым ({expected_size} байт)")
+
+        digest = h.hexdigest().lower()
+        if digest != expected_sha256.lower():
+            raise ValueError(f"Контрольная сумма SHA-256 для {label} не совпадает: {digest} != {expected_sha256.lower()}")
+
+        os.replace(part_path, target_path)
+        success = True
+    finally:
+        if not fd_closed:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        if not success:
+            part_path.unlink(missing_ok=True)
+
+
+def _safe_extract_tar_members(
+    tar_path: Path,
+    mappings: dict[str, tuple[Path, int]],  # archive_member_subpath -> (destination_file_path, file_mode)
+    cancel_check: Callable[[], bool] | None = None,
+) -> None:
+    """Extract specified files from a tar archive securely with path traversal checks and atomic staging."""
+    with tarfile.open(tar_path, "r:*") as tar:
+        for member in tar.getmembers():
+            if cancel_check and cancel_check():
+                raise InterruptedError("Распаковка отменена пользователем")
+
+            # Check all mappings
+            for subpath, (dest_file, mode) in mappings.items():
+                if member.name == subpath or member.name.endswith("/" + subpath.lstrip("/")):
+                    # Validate against path traversal
+                    p = Path(member.name)
+                    if p.is_absolute() or ".." in p.parts:
+                        raise ValueError(f"Обнаружен небезопасный путь в архиве: {member.name}")
+
+                    dest_file.parent.mkdir(parents=True, exist_ok=True)
+                    staging_path = dest_file.parent / f".{dest_file.name}.staging.{os.getpid()}.{uuid.uuid4().hex[:8]}"
+
+                    extracted_f = tar.extractfile(member)
+                    if extracted_f is None:
+                        raise ValueError(f"Не удалось извлечь файл {member.name} из архива")
+
+                    try:
+                        with open(staging_path, "wb") as out_f:
+                            shutil.copyfileobj(extracted_f, out_f)
+                        staging_path.chmod(mode)
+                        os.replace(staging_path, dest_file)
+                    finally:
+                        staging_path.unlink(missing_ok=True)
+
+
+def install_diarization_components(
+    force: bool = False,
+    progress_cb: Callable[[str, str, float], None] | None = None,
+    cancel_check: Callable[[], bool] | None = None,
+) -> dict[str, Any]:
+    """Install or verify pinned sherpa-onnx binary, library, and models from official remote sources.
+
+    Supports work/diarization-spike as a local offline cache if already present and valid,
+    but performs clean download from official GitHub releases on clean clones.
+    """
     import platform
     arch = platform.machine()
     if arch != "arm64":
@@ -571,52 +745,202 @@ def install_diarization_components(force: bool = False) -> dict[str, Any]:
     if status["ready"] and not force:
         return status
 
-    # Check local task spike directory as offline cache first
-    spike_dir = BASE_DIR / "work" / "diarization-spike"
+    # Destination paths
     work_bin_dir = BASE_DIR / "work" / "bin"
     work_lib_dir = BASE_DIR / "work" / "lib"
-    models_diar_dir = MODELS_DIR / "diarization" / "sherpa-onnx-pyannote-segmentation-3-0"
+    seg_model_dir = MODELS_DIR / "diarization" / "sherpa-onnx-pyannote-segmentation-3-0"
+    emb_model_dir = MODELS_DIR / "diarization"
+
+    dest_bin = work_bin_dir / SHERPA_BIN_NAME
+    dest_lib_c = work_lib_dir / SHERPA_LIB_NAME
+    dest_lib_onnx = work_lib_dir / ONNXRUNTIME_LIB_NAME
+    dest_seg = seg_model_dir / PYANNOTE_SEG_MODEL_NAME
+    dest_emb = emb_model_dir / ERES2NET_EMB_MODEL_NAME
 
     work_bin_dir.mkdir(parents=True, exist_ok=True)
     work_lib_dir.mkdir(parents=True, exist_ok=True)
-    models_diar_dir.mkdir(parents=True, exist_ok=True)
+    seg_model_dir.mkdir(parents=True, exist_ok=True)
+    emb_model_dir.mkdir(parents=True, exist_ok=True)
 
+    cache_dir = BASE_DIR / "work" / "download_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Check local offline cache from work/diarization-spike first if available
+    spike_dir = BASE_DIR / "work" / "diarization-spike"
     if spike_dir.exists():
-        spike_bin = spike_dir / "bin" / "sherpa-onnx-offline-speaker-diarization"
-        if spike_bin.exists():
-            dest = work_bin_dir / "sherpa-onnx-offline-speaker-diarization"
-            if not dest.exists() or force:
-                shutil.copy2(spike_bin, dest)
-                dest.chmod(0o755)
+        if progress_cb:
+            progress_cb("checking_diarization", "Проверка локального кэша work/diarization-spike...", 5.0)
 
-        spike_lib = spike_dir / "lib" / "libsherpa-onnx-c-api.dylib"
-        if spike_lib.exists():
-            dest_lib = work_lib_dir / "libsherpa-onnx-c-api.dylib"
-            if not dest_lib.exists() or force:
-                shutil.copy2(spike_lib, dest_lib)
+        spike_bin = spike_dir / "bin" / SHERPA_BIN_NAME
+        if is_safe_regular_file(spike_bin) and (not dest_bin.exists() or force):
+            shutil.copy2(spike_bin, dest_bin)
+            dest_bin.chmod(0o755)
 
-        spike_onnx = spike_dir / "lib" / "libonnxruntime.dylib"
-        if spike_onnx.exists():
-            dest_onnx = work_lib_dir / "libonnxruntime.dylib"
-            if not dest_onnx.exists() or force:
-                shutil.copy2(spike_onnx, dest_onnx)
+        spike_lib = spike_dir / "lib" / SHERPA_LIB_NAME
+        if is_safe_regular_file(spike_lib) and (not dest_lib_c.exists() or force):
+            shutil.copy2(spike_lib, dest_lib_c)
+            dest_lib_c.chmod(0o755)
 
-        spike_seg = spike_dir / "models" / "sherpa-onnx-pyannote-segmentation-3-0" / "model.int8.onnx"
-        if spike_seg.exists():
-            dest_seg = models_diar_dir / "model.int8.onnx"
-            if not dest_seg.exists() or force:
-                shutil.copy2(spike_seg, dest_seg)
+        spike_onnx = spike_dir / "lib" / ONNXRUNTIME_LIB_NAME
+        if is_safe_regular_file(spike_onnx) and (not dest_lib_onnx.exists() or force):
+            shutil.copy2(spike_onnx, dest_lib_onnx)
+            dest_lib_onnx.chmod(0o755)
 
-        spike_emb = spike_dir / "models" / "3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx"
-        if spike_emb.exists():
-            dest_emb = MODELS_DIR / "diarization" / "3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx"
-            if not dest_emb.exists() or force:
-                shutil.copy2(spike_emb, dest_emb)
+        spike_seg = spike_dir / "models" / "sherpa-onnx-pyannote-segmentation-3-0" / PYANNOTE_SEG_MODEL_NAME
+        if is_safe_regular_file(spike_seg) and (not dest_seg.exists() or force):
+            shutil.copy2(spike_seg, dest_seg)
+            dest_seg.chmod(0o644)
 
-    # Re-check status with hash verification
-    new_status = get_diarization_install_status()
+        spike_emb = spike_dir / "models" / ERES2NET_EMB_MODEL_NAME
+        if is_safe_regular_file(spike_emb) and (not dest_emb.exists() or force):
+            shutil.copy2(spike_emb, dest_emb)
+            dest_emb.chmod(0o644)
+
+        # Quick check if spike fulfilled all requirements
+        status = get_diarization_install_status()
+        if status["ready"] and not force:
+            if progress_cb:
+                progress_cb("completed", "Компоненты диаризации подготовлены из локального кэша", 100.0)
+            return status
+
+    # 1. Static binary archive (sherpa-onnx-offline-speaker-diarization)
+    if not (dest_bin.exists() and os.access(dest_bin, os.X_OK)) or force:
+        tar_static = cache_dir / "sherpa-onnx-v1.13.7-osx-arm64-static.tar.bz2"
+        # Check if cached archive exists and valid
+        archive_valid = False
+        if tar_static.is_file():
+            if hashlib.sha256(tar_static.read_bytes()).hexdigest().lower() == PINNED_SHERPA_ARM64_STATIC_SHA256.lower():
+                archive_valid = True
+            else:
+                tar_static.unlink(missing_ok=True)
+
+        if not archive_valid:
+            if progress_cb:
+                progress_cb("downloading_diarization", "Загрузка static-пакета sherpa-onnx...", 10.0)
+            _download_file(
+                url=PINNED_SHERPA_ARM64_STATIC_URL,
+                target_path=tar_static,
+                expected_sha256=PINNED_SHERPA_ARM64_STATIC_SHA256,
+                timeout_sec=600.0,
+                cancel_check=cancel_check,
+                progress_cb=progress_cb,
+                stage_name="downloading_diarization",
+                label="статического пакета sherpa-onnx",
+            )
+
+        if progress_cb:
+            progress_cb("extracting_diarization", "Распаковка исполняемого файла диаризации...", 30.0)
+        _safe_extract_tar_members(
+            tar_path=tar_static,
+            mappings={
+                "bin/sherpa-onnx-offline-speaker-diarization": (dest_bin, 0o755),
+            },
+            cancel_check=cancel_check,
+        )
+
+    # 2. Shared lib archive (libsherpa-onnx-c-api.dylib & libonnxruntime.dylib)
+    if not (dest_lib_c.exists() and dest_lib_onnx.exists()) or force:
+        tar_shared = cache_dir / "sherpa-onnx-v1.13.7-osx-arm64-shared-lib.tar.bz2"
+        archive_valid = False
+        if tar_shared.is_file():
+            if hashlib.sha256(tar_shared.read_bytes()).hexdigest().lower() == PINNED_SHERPA_ARM64_SHARED_LIB_SHA256.lower():
+                archive_valid = True
+            else:
+                tar_shared.unlink(missing_ok=True)
+
+        if not archive_valid:
+            if progress_cb:
+                progress_cb("downloading_diarization", "Загрузка shared-библиотек sherpa-onnx...", 40.0)
+            _download_file(
+                url=PINNED_SHERPA_ARM64_SHARED_LIB_URL,
+                target_path=tar_shared,
+                expected_sha256=PINNED_SHERPA_ARM64_SHARED_LIB_SHA256,
+                timeout_sec=600.0,
+                cancel_check=cancel_check,
+                progress_cb=progress_cb,
+                stage_name="downloading_diarization",
+                label="библиотек sherpa-onnx",
+            )
+
+        if progress_cb:
+            progress_cb("extracting_diarization", "Распаковка библиотек sherpa-onnx...", 60.0)
+        _safe_extract_tar_members(
+            tar_path=tar_shared,
+            mappings={
+                "lib/libsherpa-onnx-c-api.dylib": (dest_lib_c, 0o755),
+                "lib/libonnxruntime.dylib": (dest_lib_onnx, 0o755),
+            },
+            cancel_check=cancel_check,
+        )
+
+    # 3. Pyannote Segmentation Model Archive
+    if not dest_seg.exists() or force:
+        tar_seg = cache_dir / "sherpa-onnx-pyannote-segmentation-3-0.tar.bz2"
+        archive_valid = False
+        if tar_seg.is_file():
+            if hashlib.sha256(tar_seg.read_bytes()).hexdigest().lower() == PINNED_SEGMENTATION_ARCHIVE_SHA256.lower():
+                archive_valid = True
+            else:
+                tar_seg.unlink(missing_ok=True)
+
+        if not archive_valid:
+            if progress_cb:
+                progress_cb("downloading_diarization", "Загрузка модели сегментации pyannote...", 70.0)
+            _download_file(
+                url=PINNED_SEGMENTATION_URL,
+                target_path=tar_seg,
+                expected_sha256=PINNED_SEGMENTATION_ARCHIVE_SHA256,
+                timeout_sec=300.0,
+                cancel_check=cancel_check,
+                progress_cb=progress_cb,
+                stage_name="downloading_diarization",
+                label="модели сегментации речи pyannote",
+            )
+
+        if progress_cb:
+            progress_cb("extracting_diarization", "Распаковка модели сегментации...", 80.0)
+        _safe_extract_tar_members(
+            tar_path=tar_seg,
+            mappings={
+                "model.int8.onnx": (dest_seg, 0o644),
+            },
+            cancel_check=cancel_check,
+        )
+
+        # Verify extracted model SHA256
+        actual_seg_sha = hashlib.sha256(dest_seg.read_bytes()).hexdigest().lower()
+        if actual_seg_sha != PINNED_SEGMENTATION_MODEL_SHA256.lower():
+            dest_seg.unlink(missing_ok=True)
+            raise ValueError(f"Контрольная сумма модели сегментации не совпадает: {actual_seg_sha} != {PINNED_SEGMENTATION_MODEL_SHA256.lower()}")
+
+    # 4. 3D-Speaker Eres2Net Embedding Model (direct ONNX download)
+    if not dest_emb.exists() or force:
+        if progress_cb:
+            progress_cb("downloading_diarization", "Загрузка модели эмбеддингов 3dspeaker eres2net...", 85.0)
+        _download_file(
+            url=PINNED_EMBEDDING_URL,
+            target_path=dest_emb,
+            expected_sha256=PINNED_EMBEDDING_MODEL_SHA256,
+            expected_size=PINNED_EMBEDDING_MODEL_SIZE,
+            timeout_sec=600.0,
+            cancel_check=cancel_check,
+            progress_cb=progress_cb,
+            stage_name="downloading_diarization",
+            label="модели эмбеддингов 3dspeaker eres2net",
+        )
+        dest_emb.chmod(0o644)
+
+    # Smoke verification
+    if progress_cb:
+        progress_cb("verifying_diarization", "Проверка работоспособности компонентов диаризации...", 95.0)
+
+    # Re-check status with strict hash verification
+    from .diarizer import verify_diarizer_components
+    new_status = verify_diarizer_components(force_hash_check=True)
     if not new_status["ready"]:
         raise RuntimeError(f"Не удалось подготовить компоненты диаризации: {', '.join(new_status.get('errors', []))}")
 
-    return new_status
+    if progress_cb:
+        progress_cb("completed", "Компоненты диаризации успешно установлены и проверены!", 100.0)
 
+    return get_diarization_install_status()

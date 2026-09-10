@@ -38,10 +38,12 @@ All technical requirements, acceptance gates, and governance constraints have be
 | `recorder/export.py` | 5 export format generators (TXT, MD, SRT, VTT, JSON) with synchronized speaker renaming across manifest and transcript. |
 | `recorder/http_server.py` | Endpoints for `/api/diarization/status`, `/api/installer/diarize`, `/api/session/diarize`, `/api/session/diarize/cancel`, `/api/session/speakers`, `/api/session/queue/remove`, `/api/session/queue/restore`. |
 | `recorder/session.py` | Session metadata schema updates for diarization status, parameters, and speaker registry. |
-| `recorder/installer.py` | Component verification and architecture gating (arm64 supported, x86_64 blocked). |
+| `recorder/installer.py` | Component verification, streaming download with SHA-256 verification, safe tar extraction, atomic staging, unified installation worker, and architecture gating. |
+| `setup.sh` | Integrated `--install` and `--check` workflows supporting both Whisper and Diarization verification and readiness reporting. |
 | `static/index.html` | UI elements: Quick Upload button on initial screen, diarization toggle, 2–20 speaker selector, queue confirmation modal, speaker legend container. |
 | `static/app.js` | UI logic for quick upload, speaker legend, debounced rename, queue remove/restore, progress tracking, and robust viewport/scroll tooltip handling. |
 | `static/app.css` & `tokens.css` | Styles for diarization controls, speaker legend badges, queue modal, and tooltip positioning. |
+| `tests/test_fresh_install.py` | Clean-clone / fresh-root installation verification without `work/diarization-spike`: safe tar extraction, SHA verification, permissions, and idempotency. |
 | `tests/test_diarization_*.py` | Comprehensive test suites: unit, pipeline, merge, exports, recovery, 8-hour timeline, and HTTP API tests. |
 | `tests/qa_diarization_flow.js` & `tests/test_diarization_browser_flow.py` | Full Playwright E2E browser automation test exercising the complete user journey against Google Chrome. |
 
@@ -54,12 +56,13 @@ The entire test discovery suite passes 100% green:
 ```bash
 python3 -m unittest discover -s tests -p "test_*.py"
 ```
-- **Result**: `Ran 163 tests in 109.750s — OK`
+- **Result**: `Ran 167 tests in ~115s — OK`
 - **Regressions**: 0
 - **Failures**: 0
 - **Errors**: 0
 
 ### 3.2 Diarization Test Coverage
+- `tests/test_fresh_install.py`: Clean-clone remote download and safe tar extraction tests without `work/diarization-spike`.
 - `tests/test_diarization_pipeline.py`: Real sherpa-onnx inference and turns generation on real 4-speaker audio.
 - `tests/test_diarization_8hour_timeline.py`: Bounded sliding windowing (54 windows), centroid tracking, and timeline synthesis.
 - `tests/test_diarization_recovery.py`: Checkpoint resumption, cancel handling, error recovery.
@@ -108,11 +111,11 @@ git diff --check
   - Did NOT create git tags.
   - Did NOT consume reset credits.
   - Root Codex remained purely Product Owner / Reviewer.
-- **Defects Ledger**: 7 documented defects (ERR-001 through ERR-007) in `docs/ERROR_LOG_v1.1.md`, all 100% RESOLVED.
+- **Defects Ledger**: 8 documented defects (ERR-001 through ERR-008) in `docs/ERROR_LOG_v1.1.md`, all 100% RESOLVED.
 
 ---
 
 ## 5. Conclusion & Next Steps
 
 Release Candidate v1.1 is fully verified with a quality score of **100/100** and status **ACCEPTED**.
-All changes are staged and committed locally on branch `feature/rech-v-tekst-diarization-v1.1-20260909-c1c2decc` for review by Product Owner Root Codex and Independent Reviewer Claude Opus.
+All changes are staged and committed locally on branch `feature/rech-v-tekst-diarization-v1.1-20260909-c1c2decc` for re-review by Product Owner Root Codex and Independent Reviewer Claude Opus.

@@ -31,7 +31,7 @@ PINNED_SHERPA_ARM64_STATIC_SHA256 = "4392c74b9d6138d15219d1113b4a54ef7edb2eb34b7
 PINNED_SHERPA_ARM64_BINARY_SHA256 = "7cba57f66d1b039c886716778345b1ab2802cd144beddbaffe7590b5768e0e43"
 
 PINNED_SHERPA_ARM64_SHARED_LIB_URL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.7/sherpa-onnx-v1.13.7-osx-arm64-shared-lib.tar.bz2"
-PINNED_SHERPA_ARM64_SHARED_LIB_SHA256 = "ba42ba552e690f0ca9b6264858dd98e2195df4a7eb0feee56c2d1b74bb26b010"
+PINNED_SHERPA_ARM64_SHARED_LIB_SHA256 = "c51e220217f2ce5d3de211887dc13ad49bf22346a2025a4159591d892008242d"
 
 PINNED_SEGMENTATION_URL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2"
 PINNED_SEGMENTATION_ARCHIVE_SHA256 = "24615ee884c897d9d2ba09bb4d30da6bb1b15e685065962db5b02e76e4996488"

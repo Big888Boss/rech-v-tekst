@@ -293,6 +293,8 @@ class TestInstallerLifecycle(unittest.TestCase):
                 # 2nd attempt (retry): succeeds
                 with patch.object(installer, "_download_and_verify_model"), \
                      patch.object(installer, "_build_whisper_static"), \
+                     patch("recorder.installer.install_diarization_components", return_value={"ready": True}), \
+                     patch("recorder.installer.get_diarization_install_status", return_value={"ready": True}), \
                      patch("recorder.installer.verify_whisper_engine", return_value=(True, str(tmp_root / "work" / "bin" / "whisper-cli"), "1.9.3", None)), \
                      patch("recorder.installer.verify_whisper_model", return_value={"ready": True, "state": "verified"}):
                     installer.start_install(force=True)

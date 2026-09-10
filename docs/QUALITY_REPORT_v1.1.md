@@ -15,16 +15,16 @@ Evaluation Date: 2026-09-10
 
 | Quality Area | Assessment | Score (0-10) | Detailed Evidence & Notes |
 |---|---|---|---|
-| **Acceptance Criteria Coverage** | PASS | 10/10 | All 9 core acceptance criteria (AC1–AC9) fully implemented, automated, and verified green. |
-| **Implementation Completeness** | PASS | 10/10 | Offline sherpa-onnx engine, sliding windows (54 windows for 8h call), acoustic centroid registry, live speaker legend rename synchronization, queue remove/restore, and 5 export formats complete. |
-| **Automated Tests** | PASS | 10/10 | 163 unit/integration/E2E tests pass across the entire test suite (`python3 -m unittest discover -s tests -p "test_*.py"`). |
-| **Runtime & UI Evidence** | PASS | 10/10 | Browser E2E suite (`tests/test_diarization_browser_flow.py`, `tests/test_browser_e2e.py`, `tests/test_layout_and_tooltips_e2e.py`) drives real Google Chrome, capturing 8 PNG screenshots in `work/qa/screenshots/` and QA markdown reports. |
-| **Regression Prevention** | PASS | 10/10 | Full backwards compatibility preserved; existing v1.0 sessions and tests all pass cleanly without regression. |
-| **Security & Data Safety** | PASS | 10/10 | Strict offline-first execution; atomic filesystem writes; symlink/path traversal verification via `verify_path_components_safe`; 0o700 directories and 0o600 sensitive files; non-arm64 architectures fail-closed. |
-| **Documentation & Operability** | PASS | 10/10 | Technical brief (`TASK_RESEARCH_BRIEF_v1.1.md`), model routing plan (`MODEL_ROUTING_PLAN_v1.1.md`), append-only error log (`ERROR_LOG_v1.1.md`), comprehensive QA documentation, and bilingual UI complete. |
+| **Acceptance Criteria Coverage** | PASS | 10/10 | All 9 core acceptance criteria (AC1–AC9) + clean clone installation blocker fully implemented, automated, and verified green. |
+| **Implementation Completeness** | PASS | 10/10 | Offline sherpa-onnx engine, sliding windows (54 windows for 8h call), acoustic centroid registry, live speaker legend rename synchronization, queue remove/restore, 5 export formats, and clean-clone remote downloader/installer complete. |
+| **Automated Tests** | PASS | 10/10 | 167 unit/integration/E2E tests pass across the entire test suite including `tests/test_fresh_install.py` (`python3 -m unittest discover -s tests -p "test_*.py"`). |
+| **Runtime & UI Evidence** | PASS | 10/10 | Browser E2E suite (`tests/test_diarization_browser_flow.py`, `tests/test_browser_e2e.py`, `tests/test_layout_and_tooltips_e2e.py`) drives real Google Chrome, capturing PNG screenshots in `work/qa/screenshots/` and QA markdown reports. |
+| **Regression Prevention** | PASS | 10/10 | Full backwards compatibility preserved; existing v1.0 sessions, installer, and tests all pass cleanly without regression. |
+| **Security & Data Safety** | PASS | 10/10 | Strict offline-first execution; atomic filesystem writes with O_CREAT/O_EXCL/O_NOFOLLOW; path traversal protection in tar extraction; 0o755 binaries/libs, 0o644 models, 0o700 directories, and 0o600 sensitive files; non-arm64 architectures fail-closed. |
+| **Documentation & Operability** | PASS | 10/10 | Technical brief (`TASK_RESEARCH_BRIEF_v1.1.md`), model routing plan (`MODEL_ROUTING_PLAN_v1.1.md`), append-only error log (`ERROR_LOG_v1.1.md`), synchronized `README.md`/`FEATURES.md`/`static/FEATURES.md`, and bilingual UI complete. |
 | **Maintainability** | PASS | 10/10 | Modular decoupled architecture: `diarizer.py`, `diarization_merge.py`, `export.py`, `installer.py`, `http_server.py`. |
 | **Reviewer Independence** | PASS | 10/10 | Antigravity is sole implementation executor; Root Codex is PO/Reviewer; Claude Opus serves as independent reviewer; governance policy strictly upheld. |
-| **Unresolved Defects** | PASS | 10/10 | All 7 documented defects (ERR-001 through ERR-007) are 100% RESOLVED with regression tests. Zero open defects. |
+| **Unresolved Defects** | PASS | 10/10 | All 8 documented defects (ERR-001 through ERR-008) are 100% RESOLVED with regression tests. Zero open defects. |
 | **Rollback Readiness** | PASS | 10/10 | Clean feature branch `feature/rech-v-tekst-diarization-v1.1-20260909-c1c2decc`; zero whitespace defects (`git diff --check` exits 0); non-destructive checkpointing. |
 
 **Final Quality Assessment**: `ACCEPTED`

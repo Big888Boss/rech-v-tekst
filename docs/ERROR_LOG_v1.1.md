@@ -163,3 +163,34 @@ Branch: `feature/rech-v-tekst-diarization-v1.1-20260909-c1c2decc`
 - **Changed Files**: `static/app.js`
 - **Retest Evidence**: Both `tests/test_layout_and_tooltips_e2e.py` and the full suite `python3 -m unittest discover -s tests -p "test_*.py"` (163 tests) passed cleanly with exit code 0.
 - **Status**: RESOLVED
+
+### ERR-008: Missing Remote Component Distribution and Incomplete Installer in Clean Clones
+- **Timestamp**: 2026-09-10T05:15:00-04:00
+- **Project**: `rech-v-tekst`
+- **Executor**: Antigravity / Gemini 3.8 Flash
+- **Command / Trigger**: Acceptance review by Root Codex; clean clone verification on fresh worktree without gitignored `work/diarization-spike`.
+- **Expected Result**: On clean clone, `./setup.sh --install` and Settings UI install both Whisper and Diarization from official remote releases; `tests/test_fresh_install.py` validates end-to-end setup without `work/diarization-spike`.
+- **Observed Result**:
+  1. `recorder/installer.py::install_diarization_components` only copied sherpa-onnx, libraries, and models from `work/diarization-spike`, which is excluded from git. On a clean clone without `work/diarization-spike`, installation failed.
+  2. `setup.sh --install` only installed Whisper components without initiating or reporting Diarization component readiness.
+  3. `PINNED_SHERPA_ARM64_SHARED_LIB_SHA256` had a placeholder hash rather than the verified SHA-256 for the arm64 shared library archive.
+- **Root Cause**: Diarization component installer was initially implemented referencing the local spike prototype directory instead of streaming official remote GitHub release tarballs and ONNX models.
+- **Severity**: High / Blocker for clean clone deployment.
+- **Issue Nature**: Installer completeness and clean-root reproducibility defect.
+- **Owner**: Antigravity
+- **Fix / Mitigation**:
+  1. Updated `PINNED_SHERPA_ARM64_SHARED_LIB_SHA256` to verified `c51e220217f2ce5d3de211887dc13ad49bf22346a2025a4159591d892008242d`.
+  2. Implemented robust streaming `_download_file` in `recorder/installer.py` with finite timeout (600s), `.part` staging with `O_CREAT | O_EXCL | O_NOFOLLOW`, SHA-256 integrity verification, and cleanup on failure.
+  3. Implemented safe tar extraction `_safe_extract_tar_members` with path traversal defense (`..` rejection, absolute path rejection, extraction into atomic staging).
+  4. Updated `install_diarization_components` to install static binaries, shared libraries, pyannote segmentation model, and 3dspeaker eres2net embedding model from remote URLs, with atomic replacement and correct file permissions (`0o755` for bin/libs, `0o644` for models), while preserving `work/diarization-spike` as an optional local cache.
+  5. Updated `InstallerManager._run_install_worker` to automatically install and verify diarization components on `arm64`, and updated `REQUIRED_DISK_BYTES` to 4.0 GB.
+  6. Updated `setup.sh` to audit and report diarization readiness in both `--check` and `--install` modes.
+  7. Created comprehensive isolated tests in `tests/test_fresh_install.py` validating path traversal rejection, SHA mismatch rejection, synthetic fresh-clone archive extraction, permissions, and idempotency.
+- **Changed Files**:
+  - `recorder/constants.py`
+  - `recorder/installer.py`
+  - `setup.sh`
+  - `tests/test_fresh_install.py`
+  - `docs/ERROR_LOG_v1.1.md`
+- **Retest Evidence**: `python3 -m unittest tests/test_fresh_install.py` passed with 4/4 tests OK; `./setup.sh --check` correctly reports diarization component status.
+- **Status**: RESOLVED

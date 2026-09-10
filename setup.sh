@@ -104,7 +104,19 @@ else:
     print(f'  Модель whisper:   ⚠ не найдена или не готова{m_err}')
     print('                    Будет загружена через ./setup.sh --install или в интерфейсе')
 
-# 5. Устройства ввода звука (Микрофон и BlackHole)
+# 5. Диаризация речи (sherpa-onnx + pyannote + eres2net)
+from recorder.installer import get_diarization_install_status
+d_stat = get_diarization_install_status()
+if d_stat.get('ready'):
+    print('  Диаризация речи:  ✅ готова (sherpa-onnx arm64, pyannote int8, eres2net 16k)')
+elif not d_stat.get('arch_supported'):
+    print('  Диаризация речи:  ⚠ недоступна на данной архитектуре (требуется macOS Apple Silicon arm64)')
+else:
+    miss = ', '.join(d_stat.get('missing', [])) or 'компоненты не установлены'
+    print(f'  Диаризация речи:  ⚠ не готова ({miss})')
+    print('                    Будет установлена через ./setup.sh --install или в интерфейсе')
+
+# 6. Устройства ввода звука (Микрофон и BlackHole)
 mics = [d for d in devices if d.get('kind') != 'blackhole']
 blackholes = [d for d in devices if d.get('kind') == 'blackhole']
 
@@ -124,10 +136,12 @@ else:
 has_py = True
 has_ff = tools.ffmpeg and tools.ffprobe
 has_w = tools.whisper and tools.model and has_ff
+has_diar = d_stat.get('ready') and has_ff
 has_mic = len(mics) > 0
 has_bh = len(blackholes) > 0
 
 w_scenario_msg = '✅ Готов' if has_w else ('❌ Требуется FFmpeg' if not has_ff else '⚠ Требуется whisper-cli и модель')
+diar_scenario_msg = '✅ Готов' if has_diar else ('❌ Требуется FFmpeg' if not has_ff else ('⚠ Не поддерживается (не arm64)' if not d_stat.get('arch_supported') else '⚠ Требуются модели и бинарники'))
 
 print()
 print('--- Готовность сценариев работы ---')
@@ -135,10 +149,11 @@ print('  1. Импорт готовых аудио/видео файлов: ', '
 print('  2. Запись с микрофона:                 ', 'ℹ️  Найден, требуется проверка звука' if (has_py and has_ff and has_mic) else ('❌ Требуется FFmpeg' if not has_ff else '❌ Требуется микрофон'))
 print('  3. Запись звука из Zoom / браузера:    ', 'ℹ️  Найден, требуется проверка звука' if (has_py and has_ff and has_bh) else ('⚠ Требуется BlackHole 2ch' if has_ff else '❌ Требуется FFmpeg'))
 print('  4. Распознавание (Whisper):            ', w_scenario_msg)
+print('  5. Диаризация по спикерам (v1.1):      ', diar_scenario_msg)
 print()
 
-if not (tools.whisper and tools.model):
-    print('ℹ️  Для локальной установки компонентов whisper выполните: ./setup.sh --install')
+if not (tools.whisper and tools.model and (not d_stat.get('arch_supported') or d_stat.get('ready'))):
+    print('ℹ️  Для локальной установки компонентов whisper и диаризации выполните: ./setup.sh --install')
     print('   Или нажмите кнопку «⚙️ Настройки» в веб-интерфейсе.')
 elif not has_ff:
     print('ℹ️  Для нормализации звука перед распознаванием установите FFmpeg: brew install ffmpeg')
