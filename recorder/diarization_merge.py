@@ -33,8 +33,8 @@ def merge_diarization_with_segments(
 
     for seg in segments:
         seg_copy = dict(seg)
-        s_from = float(seg.get("from_sec", 0.0))
-        s_to = float(seg.get("to_sec", 0.0))
+        s_from = float(seg.get("from_sec", seg.get("start", 0.0)))
+        s_to = float(seg.get("to_sec", seg.get("end", 0.0)))
         dur = max(0.0, s_to - s_from)
 
         if dur <= 0.0 or not sorted_turns:

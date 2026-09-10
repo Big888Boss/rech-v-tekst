@@ -70,6 +70,20 @@ class TestDiarizationMerge(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["speaker_id"], "speaker_unknown")
 
+    def test_merge_diarization_start_end_keys(self):
+        segments = [
+            {"start": 0.0, "end": 5.0, "text": "Слова спикера 1"},
+            {"start": 5.5, "end": 10.0, "text": "Слова спикера 2"},
+        ]
+        turns = [
+            {"from_sec": 0.0, "to_sec": 5.0, "speaker_id": "speaker_01"},
+            {"from_sec": 5.5, "to_sec": 10.0, "speaker_id": "speaker_02"},
+        ]
+        result = merge_diarization_with_segments(segments, turns)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]["speaker_id"], "speaker_01")
+        self.assertEqual(result[1]["speaker_id"], "speaker_02")
+
 
 if __name__ == "__main__":
     unittest.main()
