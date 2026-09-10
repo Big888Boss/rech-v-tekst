@@ -28,3 +28,6 @@ chunk_*.txt
 __pycache__/
 work/
 dist/
+.venv/
+build/
+dist/

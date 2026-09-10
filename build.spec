@@ -5,8 +5,7 @@ block_cipher = None
 
 # Include statically served UI files
 datas = [
-    ('static', 'static'),
-    ('app_resources', 'app_resources')
+    ('static', 'static')
 ]
 
 a = Analysis(

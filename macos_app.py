@@ -4,6 +4,7 @@ import socket
 import sys
 import threading
 import time
+import fcntl
 from http.server import ThreadingHTTPServer
 import webview
 
@@ -21,26 +22,36 @@ from recorder.lock import GLOBAL_LOCK
 from recorder.storage import ensure_private_out_dir
 from recorder.transcribe import TRANSCRIBE_MANAGER
 
-def find_free_port():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('127.0.0.1', 0))
-    port = s.getsockname()[1]
-    s.close()
-    return port
+# Global references
+http_server = None
+server_port = None
+app_delegate = None
+instance_lock_fd = None
 
-def run_server(port):
+def acquire_single_instance_lock():
+    global instance_lock_fd
+    lock_file = os.path.expanduser("~/.rech-v-tekst-app.lock")
+    instance_lock_fd = os.open(lock_file, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(instance_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except IOError:
+        return False
+
+def run_server():
+    global http_server, server_port
     ensure_private_out_dir()
     CAPTURE_MANAGER.reconcile_on_startup()
     
-    server = ThreadingHTTPServer((DEFAULT_HOST, port), HardenedHTTPHandler)
-    server.server_port = port
-    
-    global http_server
+    # Bind to port 0 to avoid race conditions
+    server = ThreadingHTTPServer((DEFAULT_HOST, 0), HardenedHTTPHandler)
+    server_port = server.server_port
+    os.environ['UI_PORT'] = str(server_port)
     http_server = server
     server.serve_forever()
 
 def shutdown_server():
-    print("Shutting down server...")
+    print("Shutting down server gracefully...")
     try:
         from recorder.http_server import STATE
         STATE.stop_all_workers(timeout=6.0)
@@ -57,19 +68,34 @@ def shutdown_server():
     except Exception as e:
         print(f"Teardown error: {e}")
         
-    if 'http_server' in globals():
+    if http_server:
         http_server.shutdown()
         http_server.server_close()
 
 def main():
-    port = find_free_port()
-    os.environ['UI_PORT'] = str(port)
+    global app_delegate, server_port
     
-    server_thread = threading.Thread(target=run_server, args=(port,), daemon=True)
-    server_thread.start()
+    if not acquire_single_instance_lock():
+        print("Application is already running.")
+        try:
+            from AppKit import NSAlert, NSApplication
+            alert = NSAlert.alloc().init()
+            alert.setMessageText_("Приложение уже запущено")
+            alert.setInformativeText_("Один экземпляр «Речь в текст» уже работает.")
+            alert.runModal()
+        except ImportError:
+            pass
+        sys.exit(1)
 
-    loading_html_path = os.path.join(app_dir, 'app_resources', 'loading.html')
-    loading_url = f"file://{loading_html_path}?port={port}"
+    # Start the local server
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+    
+    # Wait for the OS to assign the port
+    while server_port is None:
+        time.sleep(0.01)
+
+    loading_url = f"http://{DEFAULT_HOST}:{server_port}/static/loading.html"
     
     window = webview.create_window(
         'Речь в текст',
@@ -87,8 +113,9 @@ def main():
     window.events.closing += on_closing
 
     def setup_app_delegate():
+        global app_delegate
         try:
-            from AppKit import NSApp, NSObject
+            from AppKit import NSApp, NSObject, NSAlert, NSTerminateNow, NSTerminateCancel
             import objc
 
             class CustomAppDelegate(NSObject):
@@ -98,14 +125,24 @@ def main():
                         self.webview_window.show()
                     return True
                     
-                def applicationWillTerminate_(self, notification):
-                    print("Cmd-Q received. Terminating gracefully.")
+                def applicationShouldTerminate_(self, sender):
+                    print("Cmd-Q received.")
+                    if CAPTURE_MANAGER.is_active():
+                        alert = NSAlert.alloc().init()
+                        alert.setMessageText_("Прервать запись?")
+                        alert.setInformativeText_("В данный момент идет запись аудио. Если вы закроете приложение, текущая сессия будет завершена.")
+                        alert.addButtonWithTitle_("Закрыть и сохранить")
+                        alert.addButtonWithTitle_("Отмена")
+                        response = alert.runModal()
+                        if response == 1001: # Cancel button
+                            return NSTerminateCancel
+                    
                     shutdown_server()
-                    os._exit(0)
+                    return NSTerminateNow
 
-            delegate = CustomAppDelegate.alloc().init()
-            delegate.webview_window = window
-            NSApp().setDelegate_(delegate)
+            app_delegate = CustomAppDelegate.alloc().init()
+            app_delegate.webview_window = window
+            NSApp().setDelegate_(app_delegate)
             print("macOS App Delegate overridden successfully.")
         except ImportError:
             print("PyObjC not found. Native Dock/Cmd-Q integration skipped.")
@@ -116,4 +153,20 @@ def main():
     shutdown_server()
 
 if __name__ == '__main__':
-    main()
+    # When running in test mode, do not block
+    if os.environ.get('TEST_MODE') == '1':
+        # Start server but don't open GUI
+        server_thread = threading.Thread(target=run_server, daemon=True)
+        server_thread.start()
+        while server_port is None:
+            time.sleep(0.01)
+        # Inform the test of the assigned port
+        print(f"TEST_PORT={server_port}")
+        # Wait for termination
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            shutdown_server()
+    else:
+        main()
