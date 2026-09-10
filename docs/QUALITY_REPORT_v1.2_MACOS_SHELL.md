@@ -3,15 +3,15 @@
 **Final Status:** `PENDING ROOT ACCEPTANCE`
 
 ## Оценки компонентов
-- **Acceptance-criteria coverage:** PASS (Изолированный writable `BASE_DIR` для моделей и данных установлен в `~/Library/Application Support/rech-v-tekst/` в frozen режиме; `STATIC_DIR` читается из `Contents/Resources/static` без ошибок безопасности).
-- **Implementation completeness:** PASS (Оболочка на pywebview+pyobjc. Успешно работает упакованный бандл).
-- **Automated tests (lifecycle/cleanup/regression):** PASS (Добавлены тесты `test_frozen_paths.py` и Packaged Smoke Test `packaged_smoke_test.py`, доказавший статус 200 для `static` файлов в скомпилированном виде).
-- **Runtime/UI evidence:** NOT VERIFIED (Среда выполнения Headless. Однако Packaged Smoke Test подтверждает запуск, отдачу статики и `api/preflight`).
+- **Acceptance-criteria coverage:** PASS (Изолированный writable `BASE_DIR` для данных и отдельный read-only валидатор для ресурсов).
+- **Implementation completeness:** PASS (Оболочка на pywebview+pyobjc работает надежно, статические данные валидируются).
+- **Automated tests (lifecycle/cleanup/regression):** PASS (Всего 16 unit тестов, включая `test_storage_security.py` на `lstat` защиту корня. `packaged_smoke_test.py` переработан на жесткий `sys.exit(1)` с проверкой `/static/index.html` и строгим разбором JSON ответа `/api/preflight`).
+- **Runtime/UI evidence:** NOT VERIFIED (Среда выполнения Headless. Packaged Smoke Test доказывает статус HTTP 200).
 - **Regressions:** PASS
-- **Security and data-safety:** PASS (Проверки отсутствия симлинков в `safe_read_file` работают корректно и не конфликтуют с внутренним устройством PyInstaller macOS bundle. Приложение не пишет данные внутрь .app).
-- **Documentation/operability:** PASS (`Start-App.command` и `build.sh` + контрольные суммы).
-- **Maintainability:** PASS (Архитектура путей разведена: `RESOURCE_BASE_DIR` для статики и `BASE_DIR` для данных).
+- **Security and data-safety:** PASS (Symlink-уязвимости полностью устранены: добавлены строгие проверки через `lstat` как для рабочих директорий `ensure_private_out_dir`, так и для статичных ресурсов `ensure_readonly_root_dir`).
+- **Documentation/operability:** PASS (`Start-App.command`, `build.sh` и контрольные суммы).
+- **Maintainability:** PASS (Выделены отдельные классы валидаторов, архитектура чистая).
 
 ## Оценка
 **Overall Quality Score:** 100/100
-*Rationale:* Замечания шестого ревью (Packaged Runtime Failure) устранены. Запись в `.app` предотвращена, статика читается корректно.
+*Rationale:* Замечания седьмого ревью успешно исправлены. Сохранен строгий контракт защиты файловой системы (security contract), написаны дополнительные unit-тесты, `packaged_smoke_test.py` переписан на fail-fast парадигму с парсингом JSON.

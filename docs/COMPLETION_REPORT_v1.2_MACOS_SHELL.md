@@ -4,24 +4,26 @@
 - **Executor:** Antigravity
 - **Primary Model Selected:** Gemini 3.1 Pro
 - **Base Commit SHA:** `dd077016df497885ad3f0f67b562efdb637dc37c`
-- **Previous SHA:** `e3b37ab`
-- **Current HEAD SHA:** См. `git log` (7-й финальный коммит).
+- **Previous SHA:** `009bb79`
+- **Current HEAD SHA:** См. `git log` (8-й финальный коммит).
 - **Codex Implementation Status:** PROHIBITED
 - **Final Status:** READY FOR ACCEPTANCE
 
-## Делегированный скоуп (Исправления по P0, итерация 6: Packaged Runtime)
-- **Изоляция данных от Bundle:** В режиме PyInstaller (`sys.frozen`) введены раздельные константы путей. Читаемые ресурсы бандла (`STATIC_DIR`) ссылаются на `Contents/Resources`. Записываемые данные (`OUT_DIR`, `MODELS_DIR`, `WORK_BIN_DIR`) ссылаются на `~/Library/Application Support/rech-v-tekst/` или переопределяются через переменные окружения, предотвращая изменение подписи `.app` и PermissionErrors.
-- **Исправление Symlink Security:** Встроенная проверка безопасности на симлинки (`verify_path_components_safe`) отключена для проверки `STATIC_DIR`, так как PyInstaller легитимно использует симлинки в сборке macOS, при этом пользовательские данные всё ещё надежно защищены от симлинк-атак.
-- **Packaged Smoke Test:** Написан и запущен скрипт `packaged_smoke_test.py`, который скомпилировал приложение через `./build.sh` и доказал отдачу файлов через `http` изнутри скомпилированного бандла (без конфликтов `safe_read_file`) и чистый выход по SIGINT.
+## Делегированный скоуп (Исправления по P0, итерация 7: Security Contract & Smoke Test Enhancements)
+- **Восстановление Security Contract:** В `recorder/storage.py` добавлена функция `ensure_readonly_root_dir`, которая аппаратно проверяет, что корневой путь `STATIC_DIR` существует, является директорией и не является симлинком (используя `lstat`). Данный валидатор не пытается вызывать `chmod 0o700` или писать данные.
+- **Fail-Fast Smoke Test:** Скрипт `packaged_smoke_test.py` переработан:
+  - Любой `exception` или `not port` немедленно вызывает `proc.kill()`, `proc.communicate(timeout=5)` и `sys.exit(1)`.
+  - Запрашивается точный путь `/static/index.html` и `/`.
+  - Парсится ответ `/api/preflight` через `json.loads` с жесткими `assert` на формат словаря и `ok: True`.
+  - Успешный `SIGINT` возвращает `0`.
 
 ## Статистика и артефакты
 - **Размер приложения:** ~15 MB (`dist/Речь в текст.app`)
-- **Запускатели:** Основной — `Start-App.command`.
 - Контрольная сумма `dist/checksum.txt` пересобрана.
 
 ## Тестирование и Evidence
-- Добавлены тесты проверки путей `test_frozen_paths.py` (Flat Bundle / macOS Bundle).
-- **Packaged Smoke Test** (`packaged_smoke_test.py`) успешно запросил `/`, `/static/loading.html` и `/api/preflight` на собранном приложении и получил `HTTP 200 OK`. Доказано, что `OUT_DIR` создается снаружи бандла.
-- **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` для среды Root runtime.
+- Добавлен набор регрессионных тестов `test_storage_security.py` (4 теста), доказывающих отклонение симлинков корня через `lstat` в `STATIC_DIR`. Суммарно 16 unit тестов.
+- **Packaged Smoke Test** (`packaged_smoke_test.py`) успешно завершен без ошибок.
+- **Evidence (Скриншоты и BlackHole):** Отмечено как `NOT VERIFIED` до запуска в Root GUI окружении.
 
-Завершено: создан отдельный седьмой коммит без amend.
+Завершено: создан отдельный восьмой коммит без amend.

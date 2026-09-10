@@ -25,6 +25,17 @@ def _resolve_root(root: Path | None = None) -> Path:
     return root if root is not None else OUT_DIR
 
 
+def ensure_readonly_root_dir(target_dir: Path) -> Path:
+    """Ensure a read-only root directory exists and is a regular directory, not a symlink."""
+    if not target_dir.exists():
+        raise StorageError(f"Read-only directory missing: {target_dir}")
+    if os.path.islink(target_dir):
+        raise StorageError(f"Directory cannot be a symlink: {target_dir}")
+    st = os.lstat(target_dir)
+    if not stat.S_ISDIR(st.st_mode) or stat.S_ISLNK(st.st_mode):
+        raise StorageError(f"Directory must be a regular directory: {target_dir}")
+    return target_dir
+
 def ensure_private_out_dir(target_dir: Path | None = None) -> Path:
     """Ensure directory exists and has 0o700 permissions. Never follow symlinks."""
     out_dir = _resolve_root(target_dir)
@@ -64,7 +75,9 @@ def verify_path_components_safe(target_path: Path, root: Path | None = None) -> 
     """
     active_root = _resolve_root(root)
     from .constants import STATIC_DIR
-    if active_root != STATIC_DIR:
+    if active_root == STATIC_DIR:
+        ensure_readonly_root_dir(active_root)
+    else:
         ensure_private_out_dir(active_root)
 
     # Compute relative path string without resolving symlinks in target_path
@@ -104,7 +117,9 @@ def get_session_dir(
     valid_id = validate_session_id(session_id)
     active_root = _resolve_root(root)
     from .constants import STATIC_DIR
-    if active_root != STATIC_DIR:
+    if active_root == STATIC_DIR:
+        ensure_readonly_root_dir(active_root)
+    else:
         ensure_private_out_dir(active_root)
     target_path = active_root / valid_id
 
@@ -131,7 +146,9 @@ def safe_make_dir(path: Path, mode: int = 0o700, root: Path | None = None) -> No
     """Create directory strictly inside root with restricted private permissions (0o700)."""
     active_root = _resolve_root(root)
     from .constants import STATIC_DIR
-    if active_root != STATIC_DIR:
+    if active_root == STATIC_DIR:
+        ensure_readonly_root_dir(active_root)
+    else:
         ensure_private_out_dir(active_root)
 
     target_abs = os.path.abspath(path)
