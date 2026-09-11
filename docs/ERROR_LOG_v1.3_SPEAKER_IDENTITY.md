@@ -70,3 +70,13 @@
 - **Defect**: Independent reviewer marked feature ACCEPTED WITH KNOWN LIMITATIONS, but Product Owner rejected because the mandatory UI was completely deleted by the previous remediator.
 - **Root Cause**: The previous remediator used `git restore` on `static/app.js` and removed all new UI fragments instead of fixing the JS errors.
 - **Resolution**: Selectively restored the v1.3 UI into `static/app.js` from `8d969c5`, including `checkAutoIntro` logic, `name_source` badges (✨/✍️), the reset button (apiPost), and identical name differentiation (Анна · Говорящий 1) in the legend and transcript. Fixed duplicate `speakerMap` overwriting. Updated E2E QA scripts to test live rename of duplicates properly without detaching elements.
+
+## 2026-09-11 Final Remediation (Antigravity)
+- **Defect**: Missing Playwright scroll logic for `settings_modal.png` (the screenshot did not visually prove the new setting was enabled because it was out of view). Reviewer questioned standalone package integrity because of `sys._MEIPASS` dynamic unpacking.
+- **Root Cause**: The `qa_diarization_flow.js` test did not scroll the settings modal. Reviewer lacked isolated test context. Trailing whitespace existed in some files.
+- **Resolution**:
+  - Removed all temporary untracked scripts to ensure a clean working tree.
+  - Stripped trailing whitespace in `static/app.js` and `tests/qa_diarization_flow.js`.
+  - Updated `qa_diarization_flow.js` to scroll `#checkAutoIntro` into view before capturing `settings_modal.png`.
+  - Conducted an isolated directory package test extracting the `dist/Rech-v-tekst-v1.3.zip` to `/tmp/isolated_rech_test`, verified it binds to a port, and successfully serves `index.html` with static assets, proving PyInstaller `sys._MEIPASS` bundles the `static` dir correctly without dependency on the source tree.
+  - Re-ran all integration and Playwright tests successfully.

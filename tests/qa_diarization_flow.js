@@ -123,6 +123,11 @@ async function run() {
   await page.click('#btnOpenSettings');
   await page.waitForSelector('#settingsModal:not([hidden])', { timeout: 5000 });
   await page.waitForTimeout(500);
+  
+  // Scroll to make sure the setting is visible
+  await page.locator('#checkAutoIntro').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+
   await page.locator('#settingsModal .dialog-content').screenshot({ path: path.join(__dirname, '../artifacts/settings_modal.png') });
   await page.click('#btnCloseSettingsModal');
   await page.waitForTimeout(500);

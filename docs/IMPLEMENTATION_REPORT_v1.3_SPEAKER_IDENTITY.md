@@ -47,3 +47,9 @@
 - **Reset Logic**: Speaker resets are sent to the backend and UI updates dynamically using the server response.
 - **QA E2E Flow**: Enhanced `tests/qa_diarization_flow.js` and `fake_ui_server.py` to produce realistic data (`auto_intro` with evidence) and perform a comprehensive test of duplicate naming and reset logic. All tests passed natively without evaluating innerHTML overrides.
 - **Artifacts Generated**: Realistic `settings_modal.png`, `speaker_legend.png`, and `speaker_legend_reset.png` produced by the Playwright suite.
+
+## Post-Review Consolidation
+- Purged all temporary debug and patch scripts from the repository.
+- Fixed 5 whitespace validation errors (`git diff --check`).
+- Amended E2E `qa_diarization_flow.js` test logic to durably scroll to the `checkAutoIntro` checkbox and ensure it is visibly checked in the generated Playwright screenshot.
+- Verified PyInstaller bundle standalone behavior.

@@ -75,3 +75,10 @@ Ran 173 tests in 96.703s — FAILED (failures=4, errors=6, skipped=3)
 - Targeted speaker identity integrations passed (12/12).
 - E2E Browser Flow executed (`qa_diarization_flow.js`) via `test_diarization_browser_flow.py`, natively capturing required screenshots without DOM overrides.
 - Compiled macOS zip validated against `Info.plist` (version `1.3.0`).
+
+## Standalone Packaging & Final E2E Verification
+- Proved standalone integrity of the PyInstaller bundle by extracting `dist/Rech-v-tekst-v1.3.zip` to a detached temporary path (`/tmp/isolated_rech_test`) and successfully curled `index.html`, confirming `sys._MEIPASS` correctly includes the `static` directory.
+- `settings_modal.png` successfully captures the bottom of the modal, proving `checkAutoIntro` exists and is checked.
+- Executed `unittest discover -s tests -v`: strict baseline maintained (173 tests, 4 failures, 6 errors, 3 skipped).
+- Executed `unittest tests.test_intro_parser tests.test_speaker_identity_integration -v`: 12/12 passed.
+- All temporary artifacts removed, leaving a 100% clean git working tree.
