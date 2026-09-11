@@ -53,3 +53,15 @@ class TestIntroParser(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+    def test_more_negatives(self):
+        tests = [
+            "Я думаю",
+            "Я хочу продолжить",
+            "Меня зовут Анна Иванова и",
+            "А тебя зовут Борис?",
+            "Её зовут Анна.",
+            "His name is Peter.",
+        ]
+        for txt in tests:
+            match = self.parser.parse_intro(txt)
+            self.assertIsNone(match, f"Should be none for: {txt}")

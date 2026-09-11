@@ -786,14 +786,38 @@ class Diarizer:
             )
 
             # 7b. Run IntroParser on segments to detect auto_intro
-            try:
-                from .intro_parser import IntroParser
-                parser = IntroParser()
-                # Sort segments to process chronologically
-                for seg in sorted(merged_segments, key=lambda x: float(x.get("from_sec", 0.0))):
-                    spk = seg.get("speaker_id")
-                    txt = seg.get("text", "")
-                    if spk and spk != "speaker_unknown" and txt:
+            from .config import load_settings
+            app_settings = load_settings()
+            if getattr(app_settings, 'enable_auto_intro', True):
+                try:
+                    from .intro_parser import IntroParser
+                    parser = IntroParser()
+                    
+                    # Group adjacent segments by speaker_id
+                    sorted_segs = sorted(merged_segments, key=lambda x: float(x.get("from_sec", 0.0)))
+                    
+                    grouped = []
+                    for seg in sorted_segs:
+                        spk = seg.get("speaker_id")
+                        if not spk or spk == "speaker_unknown":
+                            grouped.append(None) # break continuity
+                            continue
+                            
+                        txt = seg.get("text", "").strip()
+                        if not txt:
+                            continue
+                            
+                        if grouped and grouped[-1] and grouped[-1]["speaker_id"] == spk:
+                            grouped[-1]["text"] += " " + txt
+                        else:
+                            grouped.append({"speaker_id": spk, "text": txt})
+                    
+                    for group in grouped:
+                        if not group:
+                            continue
+                        spk = group["speaker_id"]
+                        txt = group["text"]
+                        
                         match = parser.parse_intro(txt)
                         if match:
                             registry.set_speaker_name(
@@ -803,9 +827,9 @@ class Diarizer:
                                 evidence=match.evidence,
                                 confidence=match.confidence
                             )
-            except Exception as e:
-                import logging
-                logging.error(f"Intro parsing failed: {e}")
+                except Exception as e:
+                    import logging
+                    logging.error(f"Intro parsing failed: {e}")
 
             # Re-merge to ensure the newly added names (display_name in speakers dict) are propagated 
             # if format_speaker_name was used inside merge_diarization_with_segments.

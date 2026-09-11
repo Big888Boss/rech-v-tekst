@@ -57,6 +57,10 @@ class IntroParser:
         # Ensure it doesn't contain entirely stopwords
         if all(t.lower() in self.stop_words for t in tokens):
             return False
+        
+        # Reject if the first or last token is a stop word
+        if tokens[0].lower() in self.stop_words or tokens[-1].lower() in self.stop_words:
+            return False
             
         # Ensure not too long total length
         if len(text) > 40:

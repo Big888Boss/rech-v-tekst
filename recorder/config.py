@@ -25,6 +25,7 @@ class AppSettings:
     threads: int = 4
     cpu_threads: int = 2
     no_gpu: bool = False
+    enable_auto_intro: bool = True
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

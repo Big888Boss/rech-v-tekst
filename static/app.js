@@ -1278,7 +1278,7 @@
             speakerMap[spkId] = newName;
             await apiPost('/api/session/speakers', {
               session_id: inspectedSessionId,
-              speakers: speakerMap,
+              speakers: { [spkId]: { display_name: newName, name_source: 'manual' } }
             });
             if (inspectedSessionData) {
               if (inspectedSessionData.manifest) {
@@ -1296,9 +1296,36 @@
         }, 400);
       });
 
+      const btnReset = document.createElement('button');
+      btnReset.textContent = 'Сбросить';
+      btnReset.className = 'btn-secondary btn-sm';
+      btnReset.style.marginLeft = '4px';
+      btnReset.title = 'Сбросить имя';
+      btnReset.onclick = async () => {
+          try {
+              await apiPost('/api/session/speakers', {
+                  session_id: inspectedSessionId,
+                  speakers: { [spkId]: { display_name: '', name_source: 'default' } }
+              });
+              input.value = '';
+              speakerMap[spkId] = '';
+              rawSpeakers[spkId] = { display_name: '', name_source: 'default' };
+              // We should really reload the full session data here, but to avoid full reload:
+              if (inspectedSessionData && inspectedSessionData.manifest) {
+                  inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
+                  inspectedSessionData.manifest.speakers[spkId] = { name_source: 'default' };
+              }
+              renderTranscriptEntries(inspectedSessionData?.segments, inspectedSessionData?.transcript);
+              renderSpeakerLegend(inspectedSessionData?.manifest, inspectedSessionData?.segments, inspectedSessionData?.diarization);
+          } catch (e) {
+              console.error(e);
+          }
+      };
+
       item.appendChild(badge);
       item.appendChild(badgeIcon);
       item.appendChild(input);
+      item.appendChild(btnReset);
       elements.speakerLegendContainer.appendChild(item);
     });
   }
@@ -2673,6 +2700,7 @@
       threads: gpuThreads,
       cpu_threads: cpuThreads,
       no_gpu: elements.checkGpuEnabled ? !elements.checkGpuEnabled.checked : false,
+      enable_auto_intro: document.getElementById('checkAutoIntro') ? document.getElementById('checkAutoIntro').checked : true,
     };
 
     try {

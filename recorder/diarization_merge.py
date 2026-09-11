@@ -103,20 +103,38 @@ def format_speaker_name(speaker_id: str | None, speakers: dict[str, Any] | None 
     if not speaker_id or speaker_id == "speaker_unknown":
         return "Неизвестный"
 
-    if speakers and speaker_id in speakers:
-        meta = speakers[speaker_id]
-        if isinstance(meta, dict) and meta.get("display_name"):
-            return str(meta["display_name"]).strip()
-        if isinstance(meta, str) and meta.strip():
-            return meta.strip()
-
-    # Default localized speaker naming (speaker_01 -> Говорящий 1, speaker_02 -> Говорящий 2)
+    default_name = speaker_id
     if speaker_id.startswith("speaker_"):
         suffix = speaker_id[len("speaker_"):]
         if suffix.isdigit():
             num = int(suffix)
             if num == 0:
                 num = 1
-            return f"Говорящий {num}"
+            default_name = f"Говорящий {num}"
 
-    return speaker_id
+    if speakers and speaker_id in speakers:
+        meta = speakers[speaker_id]
+        disp = ""
+        if isinstance(meta, dict) and meta.get("display_name"):
+            disp = str(meta["display_name"]).strip()
+        elif isinstance(meta, str) and meta.strip():
+            disp = meta.strip()
+            
+        if disp:
+            # Check for duplicates across all speakers to append discriminator
+            is_duplicate = False
+            for k, v in speakers.items():
+                if k != speaker_id:
+                    other_disp = ""
+                    if isinstance(v, dict) and v.get("display_name"):
+                        other_disp = str(v["display_name"]).strip()
+                    elif isinstance(v, str) and v.strip():
+                        other_disp = v.strip()
+                    if other_disp == disp:
+                        is_duplicate = True
+                        break
+            if is_duplicate:
+                return f"{disp} · {default_name}"
+            return disp
+
+    return default_name

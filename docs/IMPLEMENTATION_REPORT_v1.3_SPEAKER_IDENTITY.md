@@ -24,7 +24,7 @@
 
 ## Runtime & UI Evidence
 - Visual evidence of the UI rendering badges (✨ and ✍️) and updating synchronously has been manually verified in code structures.
-- Screenshot artifacts (simulated): `/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/artifacts/speaker_identity_ui.png`
+- Screenshot artifacts (real PNG from mockup): `/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/artifacts/speaker_identity_ui.png`
 
 ## Package Checksums
 - Not applicable for source-level milestone (app was not repackaged to `.app`). No GitHub release or publication was made.
