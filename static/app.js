@@ -1237,12 +1237,37 @@
       badge.setAttribute('data-speaker-idx', spkIdx);
       badge.textContent = spkId;
 
+      const spkObj = rawSpeakers[spkId] || {};
+      const source = spkObj.name_source || 'default';
+      const evidence = spkObj.name_evidence || '';
+
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'speaker-rename-input';
       input.value = speakerMap[spkId] || '';
       input.placeholder = `Говорящий ${spkIdx}`;
       input.setAttribute('aria-label', `Имя для ${spkId}`);
+      
+      let titleMsg = "Голос распознаётся локально. Имя можно задать вручную.";
+      if (source === 'auto_intro') {
+          titleMsg = `Имя определено автоматически: представился ("${evidence}")`;
+      } else if (source === 'manual') {
+          titleMsg = "Имя задано вручную";
+      }
+      input.title = titleMsg;
+      
+      const badgeIcon = document.createElement('span');
+      badgeIcon.className = 'speaker-source-icon';
+      badgeIcon.style.marginLeft = '4px';
+      badgeIcon.style.fontSize = '0.8em';
+      if (source === 'auto_intro') {
+          badgeIcon.textContent = '✨';
+          badgeIcon.title = titleMsg;
+      } else if (source === 'manual') {
+          badgeIcon.textContent = '✍️';
+          badgeIcon.title = titleMsg;
+      }
+
 
       let saveTimeout = null;
       input.addEventListener('input', () => {
@@ -1272,6 +1297,7 @@
       });
 
       item.appendChild(badge);
+      item.appendChild(badgeIcon);
       item.appendChild(input);
       elements.speakerLegendContainer.appendChild(item);
     });

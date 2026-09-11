@@ -321,6 +321,29 @@ class CentroidRegistry:
 
         return speaker_id
 
+    
+    def set_speaker_name(self, speaker_id: str, name: str, source: str = "manual", evidence: str = "", confidence: float = 1.0) -> None:
+        if speaker_id not in self.speakers:
+            self.register_speaker(speaker_id=speaker_id)
+        
+        # Only overwrite if manual, or if current source is not manual (auto_intro overrides default, manual overrides auto_intro)
+        current_source = self.speakers[speaker_id].get("name_source", "default")
+        if source == "manual" or current_source != "manual":
+            self.speakers[speaker_id]["display_name"] = name
+            self.speakers[speaker_id]["name_source"] = source
+            if evidence:
+                self.speakers[speaker_id]["name_evidence"] = evidence
+            if confidence is not None:
+                self.speakers[speaker_id]["name_confidence"] = confidence
+
+    def reset_speaker_name(self, speaker_id: str) -> None:
+        if speaker_id in self.speakers:
+            num = int(speaker_id.split("_")[-1]) if speaker_id.startswith("speaker_") and speaker_id.split("_")[-1].isdigit() else (len(self.speakers))
+            self.speakers[speaker_id]["display_name"] = f"Говорящий {num}"
+            self.speakers[speaker_id]["name_source"] = "default"
+            self.speakers[speaker_id].pop("name_evidence", None)
+            self.speakers[speaker_id].pop("name_confidence", None)
+
     def match_cluster(
         self,
         cluster_emb: list[float],
@@ -762,6 +785,34 @@ class Diarizer:
                 speakers=registry.speakers,
             )
 
+            # 7b. Run IntroParser on segments to detect auto_intro
+            try:
+                from .intro_parser import IntroParser
+                parser = IntroParser()
+                # Sort segments to process chronologically
+                for seg in sorted(merged_segments, key=lambda x: float(x.get("from_sec", 0.0))):
+                    spk = seg.get("speaker_id")
+                    txt = seg.get("text", "")
+                    if spk and spk != "speaker_unknown" and txt:
+                        match = parser.parse_intro(txt)
+                        if match:
+                            registry.set_speaker_name(
+                                speaker_id=spk,
+                                name=match.name,
+                                source="auto_intro",
+                                evidence=match.evidence,
+                                confidence=match.confidence
+                            )
+            except Exception as e:
+                import logging
+                logging.error(f"Intro parsing failed: {e}")
+
+            # Re-merge to ensure the newly added names (display_name in speakers dict) are propagated 
+            # if format_speaker_name was used inside merge_diarization_with_segments.
+            # Actually merge_diarization_with_segments sets seg["speaker"] = spk_id, not the display name!
+            # The export module uses format_speaker_name(seg["speaker_id"], registry.speakers).
+            # So we just need to ensure the updated registry.speakers goes into transcript_payload.
+            
             # Build canonical transcript.json (schema_version: 2)
             transcript_payload = {
                 "schema_version": 2,
