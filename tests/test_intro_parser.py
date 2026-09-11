@@ -51,8 +51,6 @@ class TestIntroParser(unittest.TestCase):
             match = self.parser.parse_intro(txt)
             self.assertIsNone(match, f"Should be none for invalid name: {txt}")
 
-if __name__ == "__main__":
-    unittest.main()
     def test_more_negatives(self):
         tests = [
             "Я думаю",
@@ -65,3 +63,7 @@ if __name__ == "__main__":
         for txt in tests:
             match = self.parser.parse_intro(txt)
             self.assertIsNone(match, f"Should be none for: {txt}")
+
+if __name__ == "__main__":
+    unittest.main()
+

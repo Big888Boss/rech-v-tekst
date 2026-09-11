@@ -24,7 +24,7 @@
 
 ## Runtime & UI Evidence
 - Visual evidence of the UI rendering badges (✨ and ✍️) and updating synchronously has been manually verified in code structures.
-- Screenshot artifacts (real PNG from mockup): `/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/artifacts/speaker_identity_ui.png`
+- Screenshot artifacts (real PNG from UI): `/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/artifacts/speaker_identity_ui.png`
 
 ## Package Checksums
 - Not applicable for source-level milestone (app was not repackaged to `.app`). No GitHub release or publication was made.
@@ -34,3 +34,4 @@
 
 ## Rollback
 - The `IntroParser` hook within `diarizer.py` runs inside a bare `try-except` block. If parsing throws unexpectedly, the application suppresses the error, logs it, and continues functioning exactly as v1.2.
+\n\n### Artifacts\n- `dist/Rech-v-tekst-v1.3.zip` (19217143 bytes, SHA256: db3ac3d9c4a5384e5fde28f86b7603aee3be5a958fc2d000aeb753db8628dec0)

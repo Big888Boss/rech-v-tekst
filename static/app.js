@@ -1281,11 +1281,17 @@
               speakers: { [spkId]: { display_name: newName, name_source: 'manual' } }
             });
             if (inspectedSessionData) {
-              if (inspectedSessionData.manifest) {
-                inspectedSessionData.manifest.speakers = { ...speakerMap };
-              }
-              if (inspectedSessionData.diarization) {
-                inspectedSessionData.diarization.speakers = { ...speakerMap };
+              // We should just use the server response if it returns the updated speakers
+              if (res.speakers && inspectedSessionData) {
+                if (inspectedSessionData.manifest) inspectedSessionData.manifest.speakers = res.speakers;
+                if (inspectedSessionData.diarization) inspectedSessionData.diarization.speakers = res.speakers;
+              } else if (inspectedSessionData && inspectedSessionData.manifest) {
+                // Optimistic local update
+                inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
+                inspectedSessionData.manifest.speakers[spkId] = { 
+                  display_name: newName, 
+                  name_source: 'manual' 
+                };
               }
             }
             // Re-render entries to update names immediately
@@ -1309,11 +1315,12 @@
               });
               input.value = '';
               speakerMap[spkId] = '';
-              rawSpeakers[spkId] = { display_name: '', name_source: 'default' };
-              // We should really reload the full session data here, but to avoid full reload:
               if (inspectedSessionData && inspectedSessionData.manifest) {
                   inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
-                  inspectedSessionData.manifest.speakers[spkId] = { name_source: 'default' };
+                  delete inspectedSessionData.manifest.speakers[spkId].display_name;
+                  delete inspectedSessionData.manifest.speakers[spkId].name_evidence;
+                  delete inspectedSessionData.manifest.speakers[spkId].name_confidence;
+                  inspectedSessionData.manifest.speakers[spkId].name_source = 'default';
               }
               renderTranscriptEntries(inspectedSessionData?.segments, inspectedSessionData?.transcript);
               renderSpeakerLegend(inspectedSessionData?.manifest, inspectedSessionData?.segments, inspectedSessionData?.diarization);
