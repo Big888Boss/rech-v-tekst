@@ -34,4 +34,4 @@
 
 ## Rollback
 - The `IntroParser` hook within `diarizer.py` runs inside a bare `try-except` block. If parsing throws unexpectedly, the application suppresses the error, logs it, and continues functioning exactly as v1.2.
-\n\n### Artifacts\n- `dist/Rech-v-tekst-v1.3.zip` (19217143 bytes, SHA256: db3ac3d9c4a5384e5fde28f86b7603aee3be5a958fc2d000aeb753db8628dec0)
+\n\n### Artifacts\n- `dist/Rech-v-tekst-v1.3.zip` (19217143 bytes, SHA256: 87a40174aace9432df698a7c9b6a9cd78b73b6feb65cb4ce94a4f6dcd6ed9e72)

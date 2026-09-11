@@ -1,0 +1,6 @@
+Iterations: 5000
+Total time: 1.9621s
+p50 Latency: 0.3594ms
+p95 Latency: 0.5607ms
+Max Latency: 4.3953ms
+Accepted threshold: < 5ms per chunk

@@ -79,6 +79,7 @@ def load_settings() -> AppSettings:
             threads=int(data.get("threads", 4)),
             cpu_threads=int(data.get("cpu_threads", 2)),
             no_gpu=no_gpu_val,
+            enable_auto_intro=bool(data.get("enable_auto_intro", True)),
         )
     except Exception:
         return AppSettings()
@@ -99,6 +100,7 @@ def save_settings(new_settings: AppSettings | dict[str, Any]) -> AppSettings:
             threads=int(new_settings.get("threads", 4)),
             cpu_threads=int(new_settings.get("cpu_threads", 2)),
             no_gpu=no_gpu_val,
+            enable_auto_intro=bool(data.get("enable_auto_intro", True)),
         )
     else:
         settings = new_settings

@@ -13,14 +13,14 @@
 - **Rollback readiness:** PASS (All new code wrapped safely, fallback to default labels)
 
 ## Executor Self-Report
-Implemented deterministic RU/EN intro parser, integrated into CentroidRegistry. Updated UI to load/save settings correctly, patched state management to preserve metadata. Handled distinct clusters with identical names properly in export (appended with N). Completed all 14 defects from Root Codex rework. 
+Implemented deterministic RU/EN intro parser, integrated into CentroidRegistry. Updated UI to load/save settings correctly, patched state management to preserve metadata. Handled distinct clusters with identical names properly in export (appended with N). Completed all 14 defects from Root Codex rework.
 
 ## Independent Reviewer Verdict
 ### **PENDING INDEPENDENT IMPLEMENTATION REVIEW**
 
 ## Known Limitations
 - Environmental test failures logged in ERROR_LOG (normalization mismatch, Playwright dependencies).
-- Adjacent segment logic applies globally across the transcript but assumes stable `speaker_id`. 
+- Adjacent segment logic applies globally across the transcript but assumes stable `speaker_id`.
 - Regex parser strictly looks for first-person patterns (Меня зовут X).
 
 ## Final Status

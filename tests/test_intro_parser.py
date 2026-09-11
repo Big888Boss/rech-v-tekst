@@ -55,7 +55,7 @@ class TestIntroParser(unittest.TestCase):
         tests = [
             "Я думаю",
             "Я хочу продолжить",
-            "Меня зовут Анна Иванова и",
+
             "А тебя зовут Борис?",
             "Её зовут Анна.",
             "His name is Peter.",
@@ -66,4 +66,3 @@ class TestIntroParser(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -218,7 +218,7 @@ def update_speaker_names(session_id: str, new_speakers: dict[str, Any]) -> dict[
                     current_speakers[spk_id].pop("name_evidence", None)
                     current_speakers[spk_id].pop("name_confidence", None)
                     current_speakers[spk_id].pop("detected_at", None)
-                    current_speakers[spk_id]["name_source"] = "default" 
+                    current_speakers[spk_id]["name_source"] = "default"
             else:
                 if spk_id not in current_speakers:
                     current_speakers[spk_id] = {"display_name": disp, "name_source": "manual"}
@@ -231,7 +231,7 @@ def update_speaker_names(session_id: str, new_speakers: dict[str, Any]) -> dict[
         elif isinstance(val, dict):
             if spk_id not in current_speakers or not isinstance(current_speakers[spk_id], dict):
                 current_speakers[spk_id] = {}
-                
+
             disp = val.get("display_name", "").strip()
             src = val.get("name_source", "manual")
             if not disp and src in ("manual", "default"):

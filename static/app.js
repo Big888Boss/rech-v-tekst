@@ -1247,7 +1247,7 @@
       input.value = speakerMap[spkId] || '';
       input.placeholder = `Говорящий ${spkIdx}`;
       input.setAttribute('aria-label', `Имя для ${spkId}`);
-      
+
       let titleMsg = "Голос распознаётся локально. Имя можно задать вручную.";
       if (source === 'auto_intro') {
           titleMsg = `Имя определено автоматически: представился ("${evidence}")`;
@@ -1255,7 +1255,7 @@
           titleMsg = "Имя задано вручную";
       }
       input.title = titleMsg;
-      
+
       const badgeIcon = document.createElement('span');
       badgeIcon.className = 'speaker-source-icon';
       badgeIcon.style.marginLeft = '4px';
@@ -1288,9 +1288,9 @@
               } else if (inspectedSessionData && inspectedSessionData.manifest) {
                 // Optimistic local update
                 inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
-                inspectedSessionData.manifest.speakers[spkId] = { 
-                  display_name: newName, 
-                  name_source: 'manual' 
+                inspectedSessionData.manifest.speakers[spkId] = {
+                  display_name: newName,
+                  name_source: 'manual'
                 };
               }
             }

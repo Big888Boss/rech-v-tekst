@@ -1,0 +1,645 @@
+test_corrupted_wav_rejection (test_audio_fidelity_and_normalization.TestAudioFidelityAndNormalization) ... ok
+test_normalization_duration_preservation (test_audio_fidelity_and_normalization.TestAudioFidelityAndNormalization) ... ERROR
+test_normalization_mismatch_raises_error_and_preserves_old (test_audio_fidelity_and_normalization.TestAudioFidelityAndNormalization) ... FAIL
+test_truncated_claimed_header_wav_rejection (test_audio_fidelity_and_normalization.TestAudioFidelityAndNormalization) ... ok
+test_wav_validation_and_header_parsing (test_audio_fidelity_and_normalization.TestAudioFidelityAndNormalization) ... ok
+test_f01_guardian_supervises_and_reaps_on_parent_death (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+F01: Real guardian supervisor cleans up worker and frees lock when parent dies. ... ok
+test_f02_transcribe_cancel_during_normalization_stops_worker (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+F02: Cancelling transcription while normalize_chunk is running reaps the worker immediately. ... ok
+test_f03_source_bound_validation_cannot_be_bypassed_by_stale_normalized (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+F03: Stale normalized record must not bypass source validation in transcribe_session. ... ok
+test_f04_exact_token_matching_no_prefix_suffix_collision (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+F04: is_process_alive_and_ours must match exact token argument, not prefixes or substrings. ... ok
+test_f04_startup_does_not_interrupt_live_owner_session (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+F04/F01: reconcile_on_startup must not declare a live session interrupted if lock owner is running. ... ok
+test_f04_supervisor_argv_identity_and_rejection_of_unrelated_executables (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+F04: is_process_alive_and_ours must validate authentic supervisor argv structure: ... ok
+test_f04_unrelated_process_with_matching_path_never_signaled (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+F04: Verify unrelated process with matching session path is rejected and never signaled. ... ok
+test_r01_pipe_deadlock_eliminated_with_large_stderr (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+Verify that a child process producing large stderr output (>100KB) does not deadlock. ... ok
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/suite.py:107: ResourceWarning: unclosed file <_io.TextIOWrapper name=6 encoding='UTF-8'>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+test_r02_kernel_flock_held_by_child_across_parent_death (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+Verify that child process holding inherited lock_fd keeps kernel flock active across parent exit. ... ok
+test_r09_legacy_session_chunks_in_session_dir_are_processed (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+Verify that legacy sessions with chunk_000.wav in session root are processed without missing chunk errors. ... ok
+test_r10_whisper_missing_or_invalid_json_is_rejected (test_audio_lifecycle_round03.TestAudioLifecycleRound03)
+Verify that transcription fails if Whisper produces text without valid JSON timestamps. ... ok
+test_browser_e2e_primary_flow_and_8_states (test_browser_e2e.TestBrowserE2E)
+Execute full Playwright browser suite in Google Chrome. ... ok
+test_teardown_reaps_detached_browser_like_group (test_browser_e2e.TestBrowserE2E)
+Verify tearDown reaps a registered detached browser-like process group. ... ok
+test_teardown_reaps_term_ignoring_child_when_leader_exits_early (test_browser_e2e.TestBrowserE2E)
+Verify tearDown reaps term-ignoring child even if session leader already exited. ... ok
+test_teardown_reaps_term_ignoring_child_when_leader_exits_on_term (test_browser_e2e.TestBrowserE2E)
+Verify tearDown escalates to SIGKILL and reaps term-ignoring child when leader exits on SIGTERM. ... ok
+test_capture_command_construction_uses_resolved_binary_and_fails_closed (test_device_preflight.TestDevicePreflight)
+Verify capture.py resolves ffmpeg via media_tools and fails closed on nonexistent explicit bin. ... ok
+test_cli_record_test_zoom_selects_blackhole (test_device_preflight.TestDevicePreflight) ... ok
+test_device_command_construction_uses_resolved_binary_and_fails_closed (test_device_preflight.TestDevicePreflight)
+Verify device.py resolves ffmpeg via media_tools and fails closed on nonexistent explicit bin. ... ok
+test_explicit_test_action_runs_checks (test_device_preflight.TestDevicePreflight) ... ok
+test_find_device_builtin_mic_russian_name_and_missing_blackhole (test_device_preflight.TestDevicePreflight)
+Verify device selection with only builtin_mic (Russian name, no second mic). ... ok
+test_find_device_zoom_selects_blackhole_and_not_mic0 (test_device_preflight.TestDevicePreflight) ... ok
+test_parse_volume_level (test_device_preflight.TestDevicePreflight) ... ok
+test_read_only_preflight_does_not_capture (test_device_preflight.TestDevicePreflight) ... ok
+test_8_hour_window_partitioning_exact_count (test_diarization_8hour_timeline.TestDiarization8HourTimeline)
+Verify 8 hours (28,800s) partitions into exactly 54 windows of 600s with 60s overlap. ... ok
+test_centroid_stability_across_multi_hour_pauses (test_diarization_8hour_timeline.TestDiarization8HourTimeline)
+Verify speaker identity does not drift or swap after hours of silence or between windows. ... ok
+test_large_timeline_segment_merge_bounded_performance (test_diarization_8hour_timeline.TestDiarization8HourTimeline)
+Verify merging 1,000 segments across 8 hours runs in sub-second time with dual contracts. ... ok
+test_diarization_status_get (test_diarization_api.TestDiarizationAPI) ... ok
+test_diarize_num_speakers_validation (test_diarization_api.TestDiarizationAPI) ... ok
+test_queue_remove_and_restore_api (test_diarization_api.TestDiarizationAPI) ... ok
+test_speaker_rename_api_endpoint (test_diarization_api.TestDiarizationAPI) ... ok
+test_browser_diarization_complete_flow (test_diarization_browser_flow.TestDiarizationBrowserFlow)
+Execute full Playwright diarization flow test in Google Chrome. ... === Launching Google Chrome (Playwright) against http://127.0.0.1:58512 ===
+[QA_REGISTRY] node_pid=19931 browser_pid=19932
+Server identity verified: fake_server_e98ede6e9ceb on port 58512
+--- Step 0: Loading State (Held Initial Snapshot) ---
+Loading State verified: aria-busy="true", startDisabled=true, testDisabled=true
+--- Step 1: Initial Load & Ready State ---
+Ready State: state="idle", text="Готов к работе", startEnabled=true
+--- Step 2: Audio Preflight Test Button ---
+Preflight feedback: "Звук обнаружен: пик -10 dB (48000 Hz). Устройство готово к записи."
+--- Step 3: Primary Flow - Start Live Capture ---
+Authoritative active session created: zoom_20260911_094212
+Recording active: stopVisible=true, startHidden=true, status="Идёт запись аудио"
+--- Step 4: Primary Flow - Stop Capture ---
+Elapsed duration during capture: 00:00:00
+Created session zoom_20260911_094212 in table with status: "○
+        Ожидает"
+--- Step 5: Primary Flow - Process Transcription on zoom_20260911_094212 ---
+Processing active on zoom_20260911_094212: cancelVisible=true, ariaBusy=true, status="Идёт распознавание"
+--- Step 6: Primary Flow - Cancel Transcription on zoom_20260911_094212 ---
+Session zoom_20260911_094212 cancelled; retry button now visible in table.
+--- Step 7: Primary Flow - Retry -> Ready -> Process -> Completed on zoom_20260911_094212 ---
+Session zoom_20260911_094212 after Retry: status="○
+        Ожидает" (action: Распознать)
+Session zoom_20260911_094212 completed: status="✓
+        Готово" (action: Открыть)
+--- Step 8: Inspect Session & Render Segments (B01 Verification) on zoom_20260911_094212 ---
+Rendered 2 segments; first timecode="[00:00:00]"
+--- Step 9: Transcript Search Filtering ---
+Segments matching "инженеров": 1
+--- Step 10: Markdown Export Download & Dropdown Keyboard Transitions ---
+Export link href: /files/zoom_20260911_094212/transcript.md
+Export transcript.md verified (374 bytes)
+--- Step 11: Summary Modal Opt-In Gate & Generation (M02) ---
+Focus after Escape: #btnRequestSummary
+Fallback focus target: {"id":"btnExportMenu","tagName":"BUTTON","disabled":false,"hidden":false,"hasLayout":true}
+--- Step 11a: Summary Error State Handling ---
+Summary error handling verified: "Ошибка генерации: Simulated LLM Provider Quota Error"
+--- Step 11b: Summary Timeout / Reload Guidance ---
+Summary timeout/reload advice verified: "Ошибка генерации: Failed to fetch"
+--- Step 11c: Summary Session Identity Isolation (M02) ---
+Failed session summary view while created session summary resolved: "Конспект ещё не составлен. Нажмите «Сделать конспект»."
+Generated summary received: "# Итоги собрания
+
+- Обсудили нативный захват звука..."
+--- Step 12: State 6 (Error State - Failed Session) ---
+Failed session row status: "✕
+        Ошибка"
+Failed session inspected title: "Тестовый сбой оборудования"
+--- Step 13: State 7 (Offline State - Freshness Watchdog) ---
+Offline state: isOffline=true, banner="Соединение с сервером прервано (5с назад). Проверьте локальный процесс ui.py.", startDisabled=true
+--- Step 13b: Stale State (Stalled Response with Preserved Cached Data) ---
+Stale state: badge="stale", text="Нет связи с сервером", banner=true, cachedRows=2
+--- Step 14: State 8 (Permission Denied State - M01) ---
+Permission denied: startDisabled=true, title="Доступ к микрофону заблокирован в macOS"
+--- Step 14b: Permission Reset on Source Switch (M01) ---
+Permission reset: startDisabled=false, title=""
+--- Step 14c: Transition missingBlackHole -> builtinMic (Russian name, kind: builtin_mic only) ---
+missingBlackHole: startDisabled=true, testDisabled=true, deviceVal="", msg="BlackHole не найден. Запись системного звука недоступна. Установите/включите BlackHole или выберите микрофон; для готового видео выберите импорт."
+builtinMic transition: startDisabled=false, testDisabled=false, deviceVal="1", deviceText="[1] Микрофон MacBook Pro (builtin_mic)"
+switch back to zoom: startDisabled=true, deviceVal=""
+--- Step 15: State 2 (Empty State) ---
+Empty state row: "Сессии по заданным фильтрам не найдены."
+--- Step 16: Responsive Viewports (1280px, 760px, 320px) ---
+--- Step 17: Interactive Target Minimum Size (>= 44x44px) ---
+Undersized controls (<44x44px): 0 []
+--- Step 18: Reduced Motion & Skip-Link Spatial Transform Removal (M03) ---
+Reduced motion skip link: transform="none", clipPath="none"
+--- Step 18b: Focused Reduce Motion on Skip Link (M03) ---
+Focused skip-link under reduced motion: overflow="visible", transform="none", size=303x44
+--- Step 19: Spoken Language Selector ---
+Language options: ["ru","en","auto"]
+[QA_ASSERTION] 0 unexpected browser console/page errors verified with fail-fast assertions.
+QA Report successfully written to /Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/work/qa/browser_qa_report.md
+=== ALL BROWSER TESTS PASSED PERFECTLY ===
+
+Testing audio level (3s) on device [7] 'BlackHole 2ch' (blackhole)...
+Mean volume: -20.0 dB, Max volume: -10.0 dB
+Audio signal detected successfully (peak: -10.0 dB). Ready to record.
+[Browser Console Error]: Failed to update speaker name: ReferenceError: res is not defined
+    at http://127.0.0.1:58736/static/app.js:1285:15
+QA Automation Failed: Expected transcript speaker badges to include "Алексей Смирнов" after live rename
+Error: Expected transcript speaker badges to include "Алексей Смирнов" after live rename
+    at run (/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/qa_diarization_flow.js:290:13)
+
+FAIL
+test_export_markdown_with_speakers (test_diarization_exports.TestDiarizationExports) ... ok
+test_export_srt_with_speakers_and_overlap (test_diarization_exports.TestDiarizationExports) ... ok
+test_export_txt_structured_with_speakers (test_diarization_exports.TestDiarizationExports) ... ok
+test_export_vtt_with_speakers_and_overlap (test_diarization_exports.TestDiarizationExports) ... ok
+test_generate_all_exports_and_update_speaker_names (test_diarization_exports.TestDiarizationExports) ... ok
+test_format_speaker_name_indexing (test_diarization_merge.TestDiarizationMerge)
+Test speaker_01 -> Говорящий 1 (not Говорящий 2). ... ok
+test_merge_diarization_empty (test_diarization_merge.TestDiarizationMerge) ... ok
+test_merge_diarization_start_end_keys (test_diarization_merge.TestDiarizationMerge) ... ok
+test_merge_diarization_unmatched_becomes_unknown (test_diarization_merge.TestDiarizationMerge) ... ok
+test_merge_diarization_with_overlap (test_diarization_merge.TestDiarizationMerge) ... ok
+test_merge_diarization_with_segments_basic (test_diarization_merge.TestDiarizationMerge) ... ok
+test_centroid_registry_cosine_similarity (test_diarization_pipeline.TestDiarizationPipeline) ... ok
+test_end_to_end_on_real_audio_if_available (test_diarization_pipeline.TestDiarizationPipeline) ... skipped 'Diarization components or sample audio not available'
+test_cancel_preserves_whisper_transcript (test_diarization_recovery.TestDiarizationRecovery) ... ok
+test_checkpoint_atomic_persistence_and_resumption (test_diarization_recovery.TestDiarizationRecovery) ... ERROR
+test_corrupted_checkpoint_recovery (test_diarization_recovery.TestDiarizationRecovery) ... ERROR
+test_cli_process_import_media_dependencies_and_cancellation (test_e2e_fake_cli.TestCLIEntrypoint)
+Verify cli_process handles media file import without NameError and wires cancel_event/on_proc_start. ... ok
+test_cli_process_import_signal_handling (test_e2e_fake_cli.TestCLIEntrypoint)
+Verify SIGINT/SIGTERM during media import sets cancel_event and invokes stop_and_reap. ... Media import error: Simulated Ctrl+C
+ok
+test_cli_record_test_flag_duration (test_e2e_fake_cli.TestCLIEntrypoint)
+Verify cli_record --test calls volume check for 3 seconds. ... ok
+test_full_pipeline_capture_normalize_transcribe_export (test_e2e_fake_cli.TestE2EFakeCLI) ... ok
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/suite.py:84: ResourceWarning: unclosed file <_io.TextIOWrapper name=9 encoding='UTF-8'>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/suite.py:84: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='UTF-8'>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+test_download_file_verifies_sha256_and_cleans_staging (test_fresh_install.TestFreshInstallDiarization)
+_download_file must verify SHA-256 and delete staging .part file on digest mismatch. ... ok
+test_install_diarization_components_clean_clone_mocked (test_fresh_install.TestFreshInstallDiarization)
+Complete clean installation with mocked HTTP streams matching pinned hashes. ... ok
+test_install_diarization_rejects_x86_64 (test_fresh_install.TestFreshInstallDiarization)
+Attempting to install on x86_64 must fail with informative Russian message. ... ok
+test_safe_tar_extraction_rejects_path_traversal (test_fresh_install.TestFreshInstallDiarization)
+Extraction must raise ValueError if an archive member contains '..' or absolute path. ... ok
+test_frozen_paths (unittest.loader._FailedTest) ... ERROR
+test_g01_explicit_release_keeps_lock_for_inherited_child (test_guardian_lifecycle.TestGuardianLifecycle)
+G01: Verify ProcessLock.release() does not drop inherited flock when child process is alive. ... ok
+test_g02_natural_child_exit_detected_with_open_stdin (test_guardian_lifecycle.TestGuardianLifecycle)
+G02: Guardian must detect natural child exit without waiting for stdin EOF. ... ok
+test_g03_worker_devnull_does_not_compete_for_control_commands (test_guardian_lifecycle.TestGuardianLifecycle)
+G03: Worker process must not share or intercept stdin control commands meant for guardian. ... ok
+test_guardian_cleanup_stubborn_group_escalation (test_guardian_lifecycle.TestGuardianLifecycle)
+Verify that escalation to SIGKILL successfully cleans up stubborn processes. ... ok
+test_parent_death_cleans_up_group_and_finalizes_manifest (test_guardian_lifecycle.TestGuardianLifecycle)
+Verify that when parent process is killed (SIGKILL), guardian finalizes session cleanly. ... ok
+test_h1_exited_leader_reaps_orphaned_child_via_saved_pgid (test_harness_safety.TestHarnessProcessReaping)
+Verify that when a process group leader exits, cleanup still reaps surviving children. ... ok
+test_cross_origin_post_blocked (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_csrf_token_required_for_mutations (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_disallowed_file_download_blocked (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_download_hardlink_or_symlink_rejected (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_invalid_host_header_blocked (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_preflight_test_requires_csrf_token (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_read_only_preflight_does_not_execute_volume_test (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_summary_endpoint_requires_strict_opt_in_boolean (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_valid_csrf_token_accepted (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_x_requested_with_without_token_is_rejected (test_http_server_security.TestHTTPServerSecurity) ... ok
+test_en_positives (test_intro_parser.TestIntroParser) ... ok
+test_invalid_names (test_intro_parser.TestIntroParser) ... ok
+test_more_negatives (test_intro_parser.TestIntroParser) ... ok
+test_negatives (test_intro_parser.TestIntroParser) ... ok
+test_ru_positives (test_intro_parser.TestIntroParser) ... ok
+test_layout_breakpoints_and_tooltip_system (test_layout_and_tooltips_e2e.TestLayoutAndTooltipsE2E) ... === Launching Google Chrome (Playwright) against http://127.0.0.1:58736 ===
+[QA_REGISTRY] node_pid=20079 browser_pid=20080
+Server identity verified: fake_server_ac249be54a30 on port 58736
+--- Step 1: Initial Screen & Quick Upload Control ---
+Quick upload clicked: sourceSelect="upload", uploadContainer visible=true
+--- Step 2: Diarization Toggle & Speaker Count Select (2–20) ---
+Diarization toggled on, speaker count set to: 4
+--- Step 3: Queue Deletion Modal & Restoration ---
+Target session for queue removal: session_20260908_failed
+Queue confirmation modal open for session: Тестовый сбой оборудования
+Session session_20260908_failed in removed filter view; restore button rendered
+Session session_20260908_failed restored to active queue successfully
+--- Step 4: Primary Live Capture -> Stop -> Process -> Diarize Lifecycle ---
+Processing new session: zoom_20260911_094249
+Transcription completed for session zoom_20260911_094249
+Diarize response: status=200 body={"ok": true, "session_id": "zoom_20260911_094249", "status": "started"}
+Status right after diarize: {"ok": true, "active": {"kind": "diarizing", "session_id": "zoom_20260911_094249", "status": "running", "diarization_progress": {"stage": "diarizing", "progress": 25, "percent": 25, "total_windows": 4, "current_window": 1, "elapsed_sec": 0.5, "eta_sec": 1.5}}, "sessions": [{"session_id": "zoom_20260911_094249", "title": "", "created_at": "2026-09-11 09:42:49", "updated_at": "2026-09-11 09:42:51", "status": "completed", "source_kind": "zoom", "device_info": {"index": 0}, "native_sample_rate": null, "native_channels": null, "raw_chunks": [{"filename": "chunk_000.wav", "duration_sec": 2.0}], "normalized_chunks": [{"filename": "chunk_000.wav", "duration_sec": 2.0}], "total_duration_sec": 2.0, "language": "ru", "word_count": 1420, "error_message": null, "pid": null, "operation_token": null, "processing_pid": null, "summary_status": null, "has_transcript": true, "has_summary": false, "in_queue": true, "schema_version": 2, "diarization_status": null, "diarization_params": {"enabled": true, "num_speakers": 4}, "speakers": {}, "has_diarization": false}, {"session_id": "session_20260908_failed", "title": "Тестовый сбой оборудования", "created_at": "2026-09-08 08:00:00", "updated_at": "2026-09-11 09:42:48", "status": "ready", "source_kind": "mic", "device_info": {}, "native_sample_rate": null, "native_channels": null, "raw_chunks": [], "normalized_chunks": [], "total_duration_sec": 12.0, "language": "ru", "word_count": 0, "error_message": null, "pid": null, "operation_token": null, "processing_pid": null, "summary_status": null, "has_transcript": false, "has_summary": false, "in_queue": true, "schema_version": 2, "diarization_status": null, "diarization_params": {}, "speakers": {}, "has_diarization": false}], "logs": ["[09:42:46] Session session_20260908_failed reset to ready for retry", "[09:42:47] Session session_20260908_failed removed from queue (in_queue=False)", "[09:42:48] Session session_20260908_failed restored to queue (in_queue=True)"], "is_recording": false, "active_session": null, "lock": null, "disk": {"total_bytes": 1995165736960, "used_bytes": 359296430080, "free_bytes": 1635869306880, "percent_used": 18.0, "is_low": false, "hours_remaining": 2366.0, "min_required_bytes": 524288000}, "transcription": {"is_running": false}, "installer": {"status": "idle", "stage": "idle", "progress_percent": 0.0, "bytes_downloaded": 0, "bytes_total": 1624555275, "speed_mb_s": 0.0, "eta_sec": null, "message": "Компоненты не устанавливаются", "error": null, "started_at": null, "finished_at": null, "is_running": false, "completed": false, "phase": "idle", "progress": 0.0}, "last_preflight": {"devices": [{"index": 0, "name": "BlackHole 2ch", "kind": "blackhole"}, {"index": 1, "name": "Built-in Microphone", "kind": "mic"}], "selected_device": {"index": 0, "name": "BlackHole 2ch", "kind": "blackhole"}, "permissions": "granted", "native_stream": {"sample_rate": 48000, "channels": 2}, "volume_check": null}, "tools": {"ffmpeg": true, "ffprobe": true, "ready": true, "missing": [], "ffmpeg_path": "/fake/ffmpeg", "ffprobe_path": "/fake/ffprobe", "remediation": null, "whisper": true, "model": true, "whisper_path": "/Library/Developer/CommandLineTools/usr/bin/python3", "model_path": "/private/var/folders/9s/yn4jljx1425cqkypw_yd0cwc0000gn/T/rech_diar_browser_rckho48a/fake_model.bin", "whisper_version": null, "model_size_bytes": 0, "model_state": "missing", "model_error": null, "whisper_error": null, "model_sha256": null}, "recent_logs": ["[09:42:46] Session session_20260908_failed reset to ready for retry", "[09:42:47] Session session_20260908_failed removed from queue (in_queue=False)", "[09:42:48] Session session_20260908_failed restored to queue (in_queue=True)"], "csrf_token": "07c1c2eae4dc51a293a830aa7a0e722dcd95068db8e63d70", "uptime_sec": 9.8}
+Diarization active on zoom_20260911_094249: cancelVisible=true
+Diarization cancelled successfully
+--- Step 5: Speaker Legend, Rename, and Live Badge Update ---
+Speaker legend rendered 2 speakers
+Transcript speaker badges after rename: ["Говорящий 1","Говорящий 2"]
+
+Importing media file: /var/folders/9s/yn4jljx1425cqkypw_yd0cwc0000gn/T/tmp7fr4y7dx/sample_lecture.m4a -> session import_sample_lecture_20260911_094300_6acfe1
+Processing session: import_sample_lecture_20260911_094300_6acfe1 (lang=ru, summary_provider=none)
+Transcript generated: out/test/t.txt (42 words)
+Generated exports: SRT, VTT, Markdown, JSON.
+Importing media file: /var/folders/9s/yn4jljx1425cqkypw_yd0cwc0000gn/T/tmpo2_l9jha/sample_test.wav -> session import_sample_test_20260911_094300_bc22a0
+Testing audio level (3s) on device [1] 'Fake Mic' (mic)...
+Mean volume: -20.0 dB, Max volume: -5.0 dB
+Audio signal detected successfully (peak: -5.0 dB). Ready to record.
+
+--- QA Script Output ---
+ok
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/suite.py:84: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='UTF-8'>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+test_l01_active_recording_marker_blocks_concurrent_start (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... ok
+test_l02_reused_or_unrelated_pid_never_signaled (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... ok
+test_l03_duplicate_session_releases_lock_cleanly (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... ok
+test_l03_transcribe_missing_manifest_releases_lock_and_resets_state (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... ok
+test_l04_capture_redirects_logs_to_file_not_pipe (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... ok
+test_l05_bounded_stop_and_reap_escalates (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... ok
+test_l06_cli_record_exits_immediately_on_unexpected_exit (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... Recording failed: Capture process failed (exit code 42)
+ok
+test_l07_startup_reconciles_processing_session_to_interrupted (test_lifecycle_and_recovery.TestLifecycleAndRecovery) ... ok
+test_acquire_and_release (test_lock.TestProcessLock) ... ok
+test_hardlink_lock_file_rejection (test_lock.TestProcessLock) ... ok
+test_multithreaded_concurrency (test_lock.TestProcessLock) ... ok
+test_symlink_lock_file_rejection (test_lock.TestProcessLock) ... ok
+test_macos_lifecycle (unittest.loader._FailedTest) ... ERROR
+test_macos_startup_ux (unittest.loader._FailedTest) ... ERROR
+test_real_ffmpeg_import_media_file_synthetic_wav (test_offline_ffmpeg_integration.TestOfflineFFmpegIntegration)
+Verify import_media_file slices and normalizes synthetic media into 1s chunks using real ffmpeg. ... skipped 'Task-local ffmpeg not found at /Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/work/task_local_ffmpeg/ffmpeg'
+test_real_ffmpeg_normalize_chunk_synthetic_wav (test_offline_ffmpeg_integration.TestOfflineFFmpegIntegration)
+Verify normalize_chunk converts a 48kHz stereo WAV to 16kHz mono PCM16 with real task-local ffmpeg. ... skipped 'Task-local ffmpeg not found at /Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/work/task_local_ffmpeg/ffmpeg'
+test_admission_corrupt_model_rejected_preserves_ready_status (test_queue_and_admission.TestQueueAndAdmission)
+Corrupted model (SHA-256 mismatch or wrong size) must be rejected upfront without transitioning session. ... ok
+test_admission_missing_model_preserves_failed_status (test_queue_and_admission.TestQueueAndAdmission)
+When model is missing, /api/process must preserve existing failed status on disk without changing it. ... ok
+test_admission_missing_whisper_cli_preserves_ready_status (test_queue_and_admission.TestQueueAndAdmission)
+When Whisper CLI is missing, /api/process must return an error and NOT modify session status on disk. ... ok
+test_admission_symlink_model_rejected_as_unsafe (test_queue_and_admission.TestQueueAndAdmission)
+Symlinked model file must be detected and rejected as unsafe file. ... ok
+test_admission_unqueued_session_rejected_with_409_conflict (test_queue_and_admission.TestQueueAndAdmission)
+Attempting to run /api/process on a session with in_queue=False must return 409 Conflict. ... ok
+test_borrowed_lock_ownership_transcribe_manager_does_not_release_and_wrapper_releases_once (test_queue_and_admission.TestQueueAndAdmission)
+Verify real handle_process and background worker wrapper: ... ok
+test_csrf_token_required_for_queue_endpoints (test_queue_and_admission.TestQueueAndAdmission)
+Missing or invalid CSRF token on queue endpoints must return 403 Forbidden. ... ok
+test_lock_release_with_mismatched_session_id_is_guarded (test_queue_and_admission.TestQueueAndAdmission)
+ProcessLock.release() must reject releasing a lock if expected_session_id does not match. ... ok
+test_malformed_session_ids_on_queue_endpoints (test_queue_and_admission.TestQueueAndAdmission)
+Queue remove and restore must return 400 Bad Request on empty, traversal, or invalid IDs. ... ok
+test_queue_remove_active_recording_session_rejected_409 (test_queue_and_admission.TestQueueAndAdmission)
+Queue remove must be rejected with 409 Conflict if session is currently recording. ... ok
+test_queue_remove_and_restore_cycle (test_queue_and_admission.TestQueueAndAdmission)
+Test removing session from queue, verifying disk files preserved, and restoring it. ... ok
+test_queue_remove_busy_lock_returns_409_conflict (test_queue_and_admission.TestQueueAndAdmission)
+When GLOBAL_LOCK is held by another operation, queue remove must return 409 Conflict (not 500). ... ok
+test_queue_restore_active_processing_session_rejected_409 (test_queue_and_admission.TestQueueAndAdmission)
+Queue restore must be rejected with 409 Conflict if session is currently processing. ... ok
+test_queue_restore_busy_lock_returns_409_conflict (test_queue_and_admission.TestQueueAndAdmission)
+When GLOBAL_LOCK is held by another operation, queue restore must return 409 Conflict (not 500). ... ok
+test_race_between_initial_read_and_admission_acquire (test_queue_and_admission.TestQueueAndAdmission)
+Simulate remove_from_queue occurring between initial check and admission acquire: ... ok
+test_resolve_model_path_preserves_symlink_identity (test_queue_and_admission.TestQueueAndAdmission)
+resolve_model_path must return an absolute path without resolving symlink targets. ... ok
+test_retry_session_busy_lock_returns_409_conflict (test_queue_and_admission.TestQueueAndAdmission)
+When GLOBAL_LOCK is busy, /api/session/retry must return 409 Conflict. ... ok
+test_retry_session_preserves_in_queue_flag (test_queue_and_admission.TestQueueAndAdmission)
+Retrying a session must preserve in_queue=False or in_queue=True without overwriting it. ... ok
+test_thread_start_failure_unregisters_worker_and_releases_lock (test_queue_and_admission.TestQueueAndAdmission)
+If threading.Thread.start raises an exception, the handler must unregister the ... ok
+test_r1_summary_cancellation_durable_status_and_preservation (test_security_round03.TestSecurityRound03)
+Verify that cancelling summary sets summary_status to interrupted and preserves previous summary. ... ok
+test_r3_upload_cleanup_failure_releases_lock (test_security_round03.TestSecurityRound03)
+Verify that if temp file unlink raises an exception during upload error cleanup, lock is still released. ... ok
+test_r4_trickle_read_exceeding_deadline_raises_timeouterror (test_security_round03.TestSecurityRound03)
+Verify that a slow trickle stream exceeding the deadline raises TimeoutError without hanging. ... ok
+test_r5_content_type_exact_media_type_matching (test_security_round03.TestSecurityRound03)
+Verify that application/jsonp is rejected while application/json with params is accepted. ... ok
+test_boolean_parsing_strictness (test_settings_and_installer.TestConfigAndSettings)
+String 'false' or invalid bool values must be handled correctly. ... ERROR
+test_env_priority_over_saved_settings (test_settings_and_installer.TestConfigAndSettings)
+WHISPER_NO_GPU=0 must override saved no_gpu=true. ... ERROR
+test_download_closes_fd_on_urlopen_failure (test_settings_and_installer.TestInstallerLifecycle)
+_download_and_verify_model must close fd and unlink staging file on urlopen failure. ... ok
+test_installer_busy_rejection (test_settings_and_installer.TestInstallerLifecycle)
+Starting an install when one is already running must raise LockBusyError or RuntimeError. ... ok
+test_installer_existing_valid_runtime_idempotence (test_settings_and_installer.TestInstallerLifecycle)
+When target model and whisper binary are already verified, start_install skips work. ... FAIL
+test_installer_failure_then_retry (test_settings_and_installer.TestInstallerLifecycle)
+When an install attempt fails, lock is released and a subsequent retry can succeed. ... ok
+test_installer_integrity_mismatch (test_settings_and_installer.TestInstallerLifecycle)
+_download_and_verify_model must raise ValueError and cleanup on SHA mismatch. ... ok
+test_on_finish_called_even_on_instant_completion (test_settings_and_installer.TestInstallerLifecycle)
+Worker that finishes immediately must call on_finish. ... ok
+test_pinned_cmake_version (test_settings_and_installer.TestInstallerLifecycle)
+Pinned cmake version must be 4.4.3. ... ok
+test_register_before_thread_start_and_rollback (test_settings_and_installer.TestInstallerLifecycle)
+Register-before-thread.start must register worker and rollback if thread fails. ... ok
+test_run_cmd_with_reap_terminates_process_group_parent_and_child (test_settings_and_installer.TestInstallerLifecycle)
+When a command times out, _run_cmd_with_reap must terminate both the parent and child process. ... ok
+test_resolve_whisper_bin_rejects_missing_saved_bin (test_settings_and_installer.TestMediaToolsVerification)
+When saved whisper_bin is missing, resolve_whisper_bin must return None without fallback. ... ok
+test_verify_whisper_engine_cache_hit_performance (test_settings_and_installer.TestMediaToolsVerification)
+Repeated verification must hit cache in < 5ms. ... ok
+test_verify_whisper_engine_real_binary (test_settings_and_installer.TestMediaToolsVerification)
+Probe must verify our real compiled whisper-cli. ... ok
+test_verify_whisper_engine_rejects_usr_bin_true (test_settings_and_installer.TestMediaToolsVerification)
+Probe must reject arbitrary executables like /usr/bin/true. ... ok
+test_verify_whisper_model_real_model (test_settings_and_installer.TestMediaToolsVerification)
+Probe must verify our official downloaded model. ... ok
+test_verify_whisper_model_rejects_catalog_name_wrong_size (test_settings_and_installer.TestMediaToolsVerification)
+Catalog named file with wrong size must be rejected as corrupt. ... ok
+test_verify_whisper_model_rejects_sparse_or_fake_magic (test_settings_and_installer.TestMediaToolsVerification)
+Probe must reject sparse junk or files with fake magic bytes. ... ok
+test_settings_get_and_post_flow (test_settings_and_installer.TestSettingsHTTPHandler) ... FAIL
+test_adjacent_same_speaker_split_intro (test_speaker_identity_integration.TestSpeakerIdentityIntegration) ... ok
+test_export_json_provenance_with_timestamp (test_speaker_identity_integration.TestSpeakerIdentityIntegration) ... FAIL
+test_patch_single_speaker_without_corruption (test_speaker_identity_integration.TestSpeakerIdentityIntegration) ... ok
+test_reset_speaker (test_speaker_identity_integration.TestSpeakerIdentityIntegration) ... ok
+test_same_name_formatting (test_speaker_identity_integration.TestSpeakerIdentityIntegration) ... ok
+test_setting_false_save_reload (test_speaker_identity_integration.TestSpeakerIdentityIntegration) ... ok
+test_third_party_no_rename (test_speaker_identity_integration.TestSpeakerIdentityIntegration) ... ok
+test_storage_security (unittest.loader._FailedTest) ... ERROR
+test_claude_bare_requires_api_key (test_summary_isolation.TestSummaryIsolation) ... ok
+test_claude_command_flags_and_isolated_cwd (test_summary_isolation.TestSummaryIsolation) ... ok
+test_codex_summary_is_disabled (test_summary_isolation.TestSummaryIsolation) ... ok
+test_strict_opt_in_boolean_identity (test_summary_isolation.TestSummaryIsolation) ... ok
+test_summary_none_preserves_privacy (test_summary_isolation.TestSummaryIsolation) ... ok
+test_transcribe_normalizes_missing_raw_chunk_on_retry (test_transcribe_recovery.TestTranscribeRecovery) ... ok
+test_export_menu_keyboard_accessibility (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify export menu supports ArrowDown/ArrowUp/Home/End/Escape keyboard navigation. ... ok
+test_gap_progress_live_timer_and_adjacent_help (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify live recording elapsed timer and adjacent help text for Stop/Cancel (GAP-PROGRESS). ... ok
+test_r01_preflight_generation_counter_and_selection_locking (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify preflight generation counter and selection locking during tests (R01). ... ok
+test_r03_gated_action_availability_and_string_permissions (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify that actions are gated on initialDataLoaded and string permissions handled (R03). ... ok
+test_r04_initial_loading_state_and_skeleton_structure (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify initial loading status label, disabled start button, and 6-td skeleton rows (R04). ... ok
+test_r06_css_token_purity_and_no_arithmetic_stacking (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify CSS token usage, no grayscale on offline, canonical z-index, and hit targets (R06). ... ok
+test_r09_safe_focus_return_fallback (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify closeSummaryModal safely falls back to accessible focus target (R09). ... ok
+test_r11_single_unified_table_without_redundant_exceptions_table (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify that redundant exceptions table is eliminated and unified dataset is used (R11). ... ok
+test_upload_ui_contracts_tools_gating_and_error_handling (test_ui_runtime_verification.TestUIRuntimeVerification)
+Verify upload UI contracts: tool-gated action availability and persistent error display. ... ok
+test_import_media_bad_or_corrupt_non_wav_distinguished_from_missing_probe (test_upload_and_state.TestUploadAndState) ... FAIL
+test_import_media_missing_ffmpeg (test_upload_and_state.TestUploadAndState) ... ok
+test_import_media_missing_ffprobe_for_non_wav (test_upload_and_state.TestUploadAndState) ... FAIL
+test_import_user_media_never_deletes_source (test_upload_and_state.TestUploadAndState) ... ERROR
+test_retry_session_state_transition (test_upload_and_state.TestUploadAndState) ... ok
+test_safe_upload_filename_unique_and_sanitized (test_upload_and_state.TestUploadAndState) ... ok
+test_status_endpoint_reports_tools_availability (test_upload_and_state.TestUploadAndState) ... ok
+test_upload_handler_rejects_early_when_tools_missing (test_upload_and_state.TestUploadAndState) ... ok
+test_upload_ui_missing_tools_blocks_post_and_http500_shows_persistent_error (test_upload_ui_behavior.TestUploadUIBehavior)
+Run Playwright browser test with ephemeral port and strict identity check. ... ok
+
+======================================================================
+ERROR: test_normalization_duration_preservation (test_audio_fidelity_and_normalization.TestAudioFidelityAndNormalization)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/mock.py", line 1337, in patched
+    return func(*newargs, **newkeywargs)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_audio_fidelity_and_normalization.py", line 108, in test_normalization_duration_preservation
+    rec = normalize_chunk(raw_wav, norm_wav)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/recorder/normalize.py", line 211, in normalize_chunk
+    raise RuntimeError(f"FFmpeg binary not found ('{ffmpeg_bin}').")
+RuntimeError: FFmpeg binary not found ('ffmpeg').
+
+======================================================================
+ERROR: test_checkpoint_atomic_persistence_and_resumption (test_diarization_recovery.TestDiarizationRecovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_diarization_recovery.py", line 120, in test_checkpoint_atomic_persistence_and_resumption
+    res = diarizer.run_session_diarization(sid)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/recorder/diarizer.py", line 589, in run_session_diarization
+    start_time = time.time()
+UnboundLocalError: local variable 'time' referenced before assignment
+
+======================================================================
+ERROR: test_corrupted_checkpoint_recovery (test_diarization_recovery.TestDiarizationRecovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_diarization_recovery.py", line 175, in test_corrupted_checkpoint_recovery
+    res = diarizer.run_session_diarization(sid)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/recorder/diarizer.py", line 589, in run_session_diarization
+    start_time = time.time()
+UnboundLocalError: local variable 'time' referenced before assignment
+
+======================================================================
+ERROR: test_frozen_paths (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_frozen_paths
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_frozen_paths.py", line 5, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: test_macos_lifecycle (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_macos_lifecycle
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_macos_lifecycle.py", line 7, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: test_macos_startup_ux (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_macos_startup_ux
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_macos_startup_ux.py", line 4, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: test_boolean_parsing_strictness (test_settings_and_installer.TestConfigAndSettings)
+String 'false' or invalid bool values must be handled correctly.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_settings_and_installer.py", line 122, in test_boolean_parsing_strictness
+    s = save_settings({"no_gpu": False, "threads": 4, "cpu_threads": 2})
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/recorder/config.py", line 103, in save_settings
+    enable_auto_intro=bool(data.get("enable_auto_intro", True)),
+NameError: name 'data' is not defined
+
+======================================================================
+ERROR: test_env_priority_over_saved_settings (test_settings_and_installer.TestConfigAndSettings)
+WHISPER_NO_GPU=0 must override saved no_gpu=true.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_settings_and_installer.py", line 134, in test_env_priority_over_saved_settings
+    save_settings({"no_gpu": True, "threads": 4, "cpu_threads": 2})
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/recorder/config.py", line 103, in save_settings
+    enable_auto_intro=bool(data.get("enable_auto_intro", True)),
+NameError: name 'data' is not defined
+
+======================================================================
+ERROR: test_storage_security (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_storage_security
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_storage_security.py", line 216, in <module>
+    import pytest
+ModuleNotFoundError: No module named 'pytest'
+
+
+======================================================================
+ERROR: test_import_user_media_never_deletes_source (test_upload_and_state.TestUploadAndState)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/mock.py", line 1337, in patched
+    return func(*newargs, **newkeywargs)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_upload_and_state.py", line 56, in test_import_user_media_never_deletes_source
+    manifest = import_user_media_file(src_file, session_id=self.session_id)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/recorder/normalize.py", line 413, in import_media_file
+    raise RuntimeError(f"FFmpeg binary not found ('{ffmpeg_bin}'). Required to slice and normalize media.")
+RuntimeError: FFmpeg binary not found ('ffmpeg'). Required to slice and normalize media.
+
+======================================================================
+FAIL: test_normalization_mismatch_raises_error_and_preserves_old (test_audio_fidelity_and_normalization.TestAudioFidelityAndNormalization)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/mock.py", line 1337, in patched
+    return func(*newargs, **newkeywargs)
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_audio_fidelity_and_normalization.py", line 135, in test_normalization_mismatch_raises_error_and_preserves_old
+    self.assertIn("Duration mismatch", str(ctx.exception))
+AssertionError: 'Duration mismatch' not found in "FFmpeg binary not found ('ffmpeg')."
+
+======================================================================
+FAIL: test_browser_diarization_complete_flow (test_diarization_browser_flow.TestDiarizationBrowserFlow)
+Execute full Playwright diarization flow test in Google Chrome.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_diarization_browser_flow.py", line 367, in test_browser_diarization_complete_flow
+    self.assertEqual(
+AssertionError: 1 != 0 : Playwright Diarization QA failed with exit code 1:
+[Browser Console Error]: Failed to update speaker name: ReferenceError: res is not defined
+    at http://127.0.0.1:58736/static/app.js:1285:15
+QA Automation Failed: Expected transcript speaker badges to include "Алексей Смирнов" after live rename
+Error: Expected transcript speaker badges to include "Алексей Смирнов" after live rename
+    at run (/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/qa_diarization_flow.js:290:13)
+
+
+======================================================================
+FAIL: test_installer_existing_valid_runtime_idempotence (test_settings_and_installer.TestInstallerLifecycle)
+When target model and whisper binary are already verified, start_install skips work.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_settings_and_installer.py", line 333, in test_installer_existing_valid_runtime_idempotence
+    self.assertEqual(st["status"], "completed")
+AssertionError: 'running' != 'completed'
+- running
++ completed
+
+
+======================================================================
+FAIL: test_settings_get_and_post_flow (test_settings_and_installer.TestSettingsHTTPHandler)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_settings_and_installer.py", line 433, in test_settings_get_and_post_flow
+    with urllib.request.urlopen(req_post, timeout=5) as resp:
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_settings_and_installer.py", line 440, in test_settings_get_and_post_flow
+    self.fail(f"HTTPError {err.code}: {body_err}")
+AssertionError: HTTPError 500: {"ok": false, "error": "Internal error: name 'data' is not defined"}
+
+======================================================================
+FAIL: test_export_json_provenance_with_timestamp (test_speaker_identity_integration.TestSpeakerIdentityIntegration)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_speaker_identity_integration.py", line 111, in test_export_json_provenance_with_timestamp
+    self.assertIn("speaker_01", spks)
+AssertionError: 'speaker_01' not found in {}
+
+======================================================================
+FAIL: test_import_media_bad_or_corrupt_non_wav_distinguished_from_missing_probe (test_upload_and_state.TestUploadAndState)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_upload_and_state.py", line 129, in test_import_media_bad_or_corrupt_non_wav_distinguished_from_missing_probe
+    self.assertIn("has zero or unknown duration", str(ctx.exception))
+AssertionError: 'has zero or unknown duration' not found in "FFmpeg binary not found ('ffmpeg'). Required to slice and normalize media."
+
+======================================================================
+FAIL: test_import_media_missing_ffprobe_for_non_wav (test_upload_and_state.TestUploadAndState)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911/tests/test_upload_and_state.py", line 93, in test_import_media_missing_ffprobe_for_non_wav
+    self.assertIn("ffprobe binary not found", str(ctx_import.exception))
+AssertionError: 'ffprobe binary not found' not found in "FFmpeg binary not found ('ffmpeg'). Required to slice and normalize media."
+
+----------------------------------------------------------------------
+Ran 173 tests in 103.306s
+
+FAILED (failures=7, errors=10, skipped=3)
+=== Launching Google Chrome for Layout and Tooltips QA against http://127.0.0.1:58972 ===
+[QA_REGISTRY] node_pid=20170 browser_pid=20171
+--- Page loaded and idle ---
+
+--- TEST 1: Viewports & Welcome Bar Layout Bug Verification ---
+Viewport 1280px: introHeight=65.5px, verticalGap=-65.5px
+Viewport 760px: introHeight=46.0px, verticalGap=12.0px
+Viewport 624px: introHeight=46.0px, verticalGap=12.0px
+Viewport 320px: introHeight=88.0px, verticalGap=12.0px
+PASSED: Viewport layout and .welcome-intro flex-basis fix verified!
+
+--- TEST 2: Hints Mode Safe Exploration ---
+Hints mode ON: aria-pressed=true, text="Режим подсказок: вкл (безопасный просмотр)"
+Hints mode click intercepted: tooltipVisible=true, text="Запустить 2-секундный аппаратный замер уровня звука выбранного устройства"
+Hints mode OFF: text="Режим подсказок: выкл"
+PASSED: Hints mode safe exploration verified!
+
+--- TEST 3: aria-describedby Preservation ---
+Initial #btnUploadRetry aria-describedby="uploadRetryNote"
+Hovered #btnUploadRetry aria-describedby="uploadRetryNote appGlobalTooltip"
+Unhovered #btnUploadRetry aria-describedby="uploadRetryNote"
+PASSED: aria-describedby token preservation verified!
+
+--- TEST 4: Modal Dialog Tooltip in Top Layer ---
+Modal tooltip visible=true, text="Закрыть окно генерации конспекта без отправки запроса"
+Modal touch hints (2 items): "«Отмена»: закрыть окно без отправки запроса. «Сгенерировать конспект»: требует подтверждения согласия выше; отправляет расшифровку в Claude CLI."
+cancelSummaryBtn aria-describedby: "cancelSummaryHint dialogTooltip"
+submitSummaryBtn aria-describedby: "submitSummaryHint"
+Submit check: optInChecked=false, submitDisabled=true, disabledReason="Для запуска подтвердите согласие на отправку текста расшифровки"
+PASSED: Modal dialog top-layer tooltip verified!
+
+--- TEST 5: Inspector Close Button & Variable Reset ---
+PASSED: Inspector close button verified!
+
+--- TEST 6: 320px Geometry & Anti-Flicker Verification ---
+Tooltip at 320px: left=52, right=320, width=268
+PASSED: 320px geometry clamping and anti-flicker verified!
+
+--- TEST 7: FEATURES.md In-Page Help Loading & Retry UI ---
+Rendered FEATURES.md: 11 headings (h2/h3), 18 paragraphs
+Retry button data-tooltip: "Повторить попытку загрузки руководства FEATURES.md"
+PASSED: In-page help loading, markdown rendering, retry button, and Escape close verified!
+
+=== ALL 7 LAYOUT & TOOLTIP FIXES VERIFIED SUCCESSFULLY ===
+
+=== Starting Webinar Recorder ===
+Session: sess_l06_fail
+Source: zoom
+Press Ctrl+C to stop recording safely.

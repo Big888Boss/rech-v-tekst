@@ -16,7 +16,8 @@ class IntroParser:
             "не", "что", "как", "это", "по", "но", "они", "мы", "вы", "он", "она",
             "сказал", "сказала", "так", "вот", "то", "или", "если", "когда", "тут",
             "the", "a", "an", "is", "are", "was", "were", "and", "but", "or", "so",
-            "he", "she", "it", "they", "we", "you", "said", "asked", "told"
+            "he", "she", "it", "they", "we", "you", "said", "asked", "told",
+            "думаю", "считаю", "хочу", "могу", "знаю", "сказал", "скажу", "буду", "говорю", "вижу", "просто"
         }
 
         # Patterns for positive matches (first person)
