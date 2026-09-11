@@ -119,7 +119,7 @@ def format_speaker_name(speaker_id: str | None, speakers: dict[str, Any] | None 
             disp = str(meta["display_name"]).strip()
         elif isinstance(meta, str) and meta.strip():
             disp = meta.strip()
-            
+
         if disp:
             # Check for duplicates across all speakers to append discriminator
             is_duplicate = False
