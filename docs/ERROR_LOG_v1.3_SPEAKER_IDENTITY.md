@@ -80,3 +80,19 @@
   - Updated `qa_diarization_flow.js` to scroll `#checkAutoIntro` into view before capturing `settings_modal.png`.
   - Conducted an isolated directory package test extracting the `dist/Rech-v-tekst-v1.3.zip` to `/tmp/isolated_rech_test`, verified it binds to a port, and successfully serves `index.html` with static assets, proving PyInstaller `sys._MEIPASS` bundles the `static` dir correctly without dependency on the source tree.
   - Re-ran all integration and Playwright tests successfully.
+
+## 2026-09-11 Final Independent Acceptance Review (Antigravity Gemini 3.8 Flash Medium)
+- **Candidate HEAD**: `e98ca1658e9945b99a4adf805564304d5590edf4`
+- **Reviewer**: Antigravity Gemini 3.8 Flash Medium, session `db902edb-75cc-4a43-9f9c-fcf9e5f1be82`
+- **Resource/Failover Disclosure**: Prior reviewer (Claude Opus 4.6 Thinking) hit quota error `247dbf9f-6dc8-4c0f-915c-1baa80ac7c77-357` (Claude/GPT pool reached 10% 5h reserve floor, RESERVED). Failover to Gemini 3.8 Flash Medium (Gemini pool 98% weekly, 67% 5h, AVAILABLE). Note: this session shares the Gemini quota pool with the writer (Antigravity Gemini 3.1 Pro Low, session `c81dfc3d-2290-4171-af53-e3e04ec26ac5`). Recorded as a known review limitation per policy §6.
+- **Verification Results**:
+  - `python3 -m unittest tests.test_intro_parser tests.test_speaker_identity_integration -v`: 12/12 PASSED (0.009s).
+  - `python3 -m unittest discover -s tests -v`: 173 tests executed; FAILED (failures=4, errors=6, skipped=3) strictly matching baseline with 0 new regressions.
+  - Independent round-trip test of `enable_auto_intro = False` via `save_settings` / `load_settings`: PASSED.
+  - Visual verification of committed screenshots:
+    - `artifacts/settings_modal.png`: Checkbox `#checkAutoIntro` visible, enabled, checked.
+    - `artifacts/speaker_legend.png`: Duplicate names rendered as `Анна · Говорящий 1` and `Анна · Говорящий 2` in legend and transcript; `✍️` badge visible; `Сбросить` buttons visible.
+    - `artifacts/speaker_legend_reset.png`: Post-reset names restored to `Говорящий 1` and `Говорящий 2`, inputs empty.
+  - Standalone packaging: `dist/Rech-v-tekst-v1.3.zip` SHA256 `2264f39b312bb435d97eac0ba67c6626c6d76cd60600ece3121f5315d033fd52`, `Info.plist` `1.3.0`. Extracted to isolated `/tmp` directory outside repository, executed `macos_app` without source tree dependencies, confirmed live HTTP server serves `/` with `checkAutoIntro`, `/static/app.js` with `getFormattedSpeakerName`, and `/api/settings` with `enable_auto_intro`.
+  - Non-blocking minor issues noted: WS-02 (1 trailing whitespace in `tests/qa_diarization_flow.js:126`), TYPO-01 (`textConten` typo in `static/app.js:1770`).
+- **Final Status**: RESOLVED / ACCEPTED (Score: 97/100, 0 High, 0 Medium, 2 Low, 1 Info).
