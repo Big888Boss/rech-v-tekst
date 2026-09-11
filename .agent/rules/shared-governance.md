@@ -1,3 +1,7 @@
-# Always Apply: shared governance
+# Always Apply Workspace Rule
 
-Canonical policy ID: `multi-agent-governance-2026-09-09.2`. Read `/Users/kuznetcovpavel/max/AGENTS.md` and `./AGENTS.md` before acting. Root Codex coordinates and reviews; external agents implement. Preserve quota reserves, use a primary and two independent backups, record every error, require an independent quality verdict, and stay on the dedicated project branch.
+Canonical cross-agent policy: `/Users/kuznetcovpavel/max/AGENTS.md`
+Policy ID: `multi-agent-governance-2026-09-09.2`
+
+You must read and follow the canonical policy document before acting.
+Project: `rech-v-tekst`, speaker identity v1.3.
