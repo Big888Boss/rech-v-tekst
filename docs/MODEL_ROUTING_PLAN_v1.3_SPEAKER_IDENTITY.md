@@ -23,7 +23,7 @@
 - **Current Load:** AVAILABLE (No active load).
 - **Required Tools/Repo Access:** Needs read/write repository access.
 - **Expected Quota Cost:** Low (Review only).
-- **Promotion Trigger:** Primary executor exhaustion, queuing, or need for independent architecture review. 
+- **Promotion Trigger:** Primary executor exhaustion, queuing, or need for independent architecture review.
 - **Independence Note:** For this documentation stage, two Claude-family backups are acceptable. For implementation, Gemini is the writer and Claude is the independent reviewer. If failover to Claude writer occurs, a reviewer from a different available independent family must be selected after a new live preflight; if none is available, the lack of an independent family must be recorded and the operator notified before proceeding with the risky stage.
 - **Handoff Path:** If reserve floor hit, save state and hand off to Backup 2.
 

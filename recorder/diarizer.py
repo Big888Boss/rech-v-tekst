@@ -829,7 +829,6 @@ class Diarizer:
                             )
                             # add detected_at timestamp
                             if spk in registry.speakers:
-                                import time
                                 registry.speakers[spk]["detected_at"] = time.time()
                                 registry.speakers[spk]["segment_time"] = group.get("from_sec", 0.0)
                 except Exception as e:

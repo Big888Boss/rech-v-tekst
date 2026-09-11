@@ -93,6 +93,7 @@ def save_settings(new_settings: AppSettings | dict[str, Any]) -> AppSettings:
         w_bin = new_settings.get("whisper_bin")
         m_path = new_settings.get("whisper_model_path")
         no_gpu_val = _parse_bool(new_settings.get("no_gpu", False), "no_gpu")
+        auto_intro_val = _parse_bool(new_settings.get("enable_auto_intro", True), "enable_auto_intro")
         settings = AppSettings(
             whisper_bin=str(w_bin).strip() if w_bin else None,
             whisper_model_path=str(m_path).strip() if m_path else None,
@@ -100,7 +101,7 @@ def save_settings(new_settings: AppSettings | dict[str, Any]) -> AppSettings:
             threads=int(new_settings.get("threads", 4)),
             cpu_threads=int(new_settings.get("cpu_threads", 2)),
             no_gpu=no_gpu_val,
-            enable_auto_intro=bool(data.get("enable_auto_intro", True)),
+            enable_auto_intro=auto_intro_val,
         )
     else:
         settings = new_settings

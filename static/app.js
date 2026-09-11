@@ -1237,37 +1237,12 @@
       badge.setAttribute('data-speaker-idx', spkIdx);
       badge.textContent = spkId;
 
-      const spkObj = rawSpeakers[spkId] || {};
-      const source = spkObj.name_source || 'default';
-      const evidence = spkObj.name_evidence || '';
-
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'speaker-rename-input';
       input.value = speakerMap[spkId] || '';
       input.placeholder = `Говорящий ${spkIdx}`;
       input.setAttribute('aria-label', `Имя для ${spkId}`);
-
-      let titleMsg = "Голос распознаётся локально. Имя можно задать вручную.";
-      if (source === 'auto_intro') {
-          titleMsg = `Имя определено автоматически: представился ("${evidence}")`;
-      } else if (source === 'manual') {
-          titleMsg = "Имя задано вручную";
-      }
-      input.title = titleMsg;
-
-      const badgeIcon = document.createElement('span');
-      badgeIcon.className = 'speaker-source-icon';
-      badgeIcon.style.marginLeft = '4px';
-      badgeIcon.style.fontSize = '0.8em';
-      if (source === 'auto_intro') {
-          badgeIcon.textContent = '✨';
-          badgeIcon.title = titleMsg;
-      } else if (source === 'manual') {
-          badgeIcon.textContent = '✍️';
-          badgeIcon.title = titleMsg;
-      }
-
 
       let saveTimeout = null;
       input.addEventListener('input', () => {
@@ -1278,20 +1253,14 @@
             speakerMap[spkId] = newName;
             await apiPost('/api/session/speakers', {
               session_id: inspectedSessionId,
-              speakers: { [spkId]: { display_name: newName, name_source: 'manual' } }
+              speakers: speakerMap,
             });
             if (inspectedSessionData) {
-              // We should just use the server response if it returns the updated speakers
-              if (res.speakers && inspectedSessionData) {
-                if (inspectedSessionData.manifest) inspectedSessionData.manifest.speakers = res.speakers;
-                if (inspectedSessionData.diarization) inspectedSessionData.diarization.speakers = res.speakers;
-              } else if (inspectedSessionData && inspectedSessionData.manifest) {
-                // Optimistic local update
-                inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
-                inspectedSessionData.manifest.speakers[spkId] = {
-                  display_name: newName,
-                  name_source: 'manual'
-                };
+              if (inspectedSessionData.manifest) {
+                inspectedSessionData.manifest.speakers = { ...speakerMap };
+              }
+              if (inspectedSessionData.diarization) {
+                inspectedSessionData.diarization.speakers = { ...speakerMap };
               }
             }
             // Re-render entries to update names immediately
@@ -1302,37 +1271,8 @@
         }, 400);
       });
 
-      const btnReset = document.createElement('button');
-      btnReset.textContent = 'Сбросить';
-      btnReset.className = 'btn-secondary btn-sm';
-      btnReset.style.marginLeft = '4px';
-      btnReset.title = 'Сбросить имя';
-      btnReset.onclick = async () => {
-          try {
-              await apiPost('/api/session/speakers', {
-                  session_id: inspectedSessionId,
-                  speakers: { [spkId]: { display_name: '', name_source: 'default' } }
-              });
-              input.value = '';
-              speakerMap[spkId] = '';
-              if (inspectedSessionData && inspectedSessionData.manifest) {
-                  inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
-                  delete inspectedSessionData.manifest.speakers[spkId].display_name;
-                  delete inspectedSessionData.manifest.speakers[spkId].name_evidence;
-                  delete inspectedSessionData.manifest.speakers[spkId].name_confidence;
-                  inspectedSessionData.manifest.speakers[spkId].name_source = 'default';
-              }
-              renderTranscriptEntries(inspectedSessionData?.segments, inspectedSessionData?.transcript);
-              renderSpeakerLegend(inspectedSessionData?.manifest, inspectedSessionData?.segments, inspectedSessionData?.diarization);
-          } catch (e) {
-              console.error(e);
-          }
-      };
-
       item.appendChild(badge);
-      item.appendChild(badgeIcon);
       item.appendChild(input);
-      item.appendChild(btnReset);
       elements.speakerLegendContainer.appendChild(item);
     });
   }
@@ -2707,7 +2647,6 @@
       threads: gpuThreads,
       cpu_threads: cpuThreads,
       no_gpu: elements.checkGpuEnabled ? !elements.checkGpuEnabled.checked : false,
-      enable_auto_intro: document.getElementById('checkAutoIntro') ? document.getElementById('checkAutoIntro').checked : true,
     };
 
     try {

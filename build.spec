@@ -64,7 +64,7 @@ app = BUNDLE(
         'NSHighResolutionCapable': 'True',
         'CFBundleName': 'Речь в текст',
         'CFBundleDisplayName': 'Речь в текст',
-        'CFBundleVersion': '1.2.0',
-        'CFBundleShortVersionString': '1.2.0',
+        'CFBundleVersion': '1.3.0',
+        'CFBundleShortVersionString': '1.3.0',
     },
 )

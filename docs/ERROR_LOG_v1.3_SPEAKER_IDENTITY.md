@@ -32,3 +32,11 @@
 | 2026-09-11T10:08 ET | rech-v-tekst | v1.3 Final Implementation Review | `8d969c5` | Antigravity Claude Opus 4.6 Thinking (Independent Reviewer) | Independent cross-family review + browser test | Speaker rename via UI must succeed | DEF-R02: `app.js:1285` references `res` before assignment. `ReferenceError: res is not defined` in browser console. | Variable scoping error in async rename handler | High / Blocking | Manual rename in UI | New | Writer (Antigravity Gemini 3.1 Pro Low) | Fix variable scoping of `apiPost` result in rename handler | `static/app.js` | `test_browser_diarization_complete_flow` | OPEN | High — speaker rename silently fails | N/A |
 | 2026-09-11T10:08 ET | rech-v-tekst | v1.3 Final Implementation Review | `8d969c5` | Antigravity Claude Opus 4.6 Thinking (Independent Reviewer) | Independent cross-family review + test execution | Diarization must not crash on `time.time()` | DEF-R03: `diarizer.py:832` nested `import time` shadows top-level import (line 17) for entire `run_session_diarization()` scope. `UnboundLocalError` at line 589. | Python scoping: `import X` inside function makes `X` local to entire function | High / Blocking | All diarization | New | Writer (Antigravity Gemini 3.1 Pro Low) | Remove `import time` at line 832; use already-imported top-level `time` | `recorder/diarizer.py` | `test_checkpoint_atomic_persistence_and_resumption`, `test_corrupted_checkpoint_recovery` | OPEN | Critical — breaks ALL diarization | N/A |
 
+
+### Round 4 Rework (Independent Review Defect Resolutions)
+- **DEF-R01 (config.py NameError):** Fixed `data.get` to `new_settings.get` in `load_settings`.
+- **DEF-R02 (app.js ReferenceError):** Added `const res =` to the inner `apiPost` assignment.
+- **DEF-R03 (diarizer.py time import):** Removed shadowed nested `import time`.
+- **DEF-R04 (ZIP version):** Bumped version to `1.3.0` in `build.spec`, `build.sh` and repackaged.
+- **DEF-R05, DEF-R06 (UI evidence):** Regenerated real UI screenshots featuring fully populated speaker legend with auto_intro badges and fallback behaviors.
+- **DEF-R09 (Trailing whitespace):** Removed whitespace in `docs/MODEL_ROUTING_PLAN_v1.3_SPEAKER_IDENTITY.md`.
