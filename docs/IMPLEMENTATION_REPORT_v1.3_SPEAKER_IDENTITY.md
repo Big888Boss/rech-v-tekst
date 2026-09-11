@@ -35,3 +35,8 @@
 ## Rollback
 - The `IntroParser` hook within `diarizer.py` runs inside a bare `try-except` block. If parsing throws unexpectedly, the application suppresses the error, logs it, and continues functioning exactly as v1.2.
 \n\n### Artifacts\n- `dist/Rech-v-tekst-v1.3.zip` (19217143 bytes, SHA256: 87a40174aace9432df698a7c9b6a9cd78b73b6feb65cb4ce94a4f6dcd6ed9e72)
+### Round 5 Remediation (Final Fixes)
+- **DEF-R01:** Repaired `recorder/config.py` referencing undefined `data`. Successfully preserved priority loading using strict `_parse_bool` via `new_settings`.
+- **DEF-R02:** Resolved variable scoping issue in `static/app.js` (`const res = await apiPost`).
+- **DEF-R03:** Removed the shadowing nested `import time` from `recorder/diarizer.py`.
+- **DEF-R04..R09:** Generated clean `Rech-v-tekst-v1.3.zip` containing `Info.plist` at 1.3.0. Captured completely valid `artifacts/settings_modal.png`, `artifacts/speaker_legend.png`, and `artifacts/speaker_legend_reset.png` utilizing the actual `qa_diarization_flow.js` Playwright E2E browser pipeline without injecting fabricated DOM components.

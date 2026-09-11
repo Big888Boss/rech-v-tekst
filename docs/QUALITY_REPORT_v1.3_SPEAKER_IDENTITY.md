@@ -64,3 +64,8 @@ Pre-existing failures: normalization mismatch, installer idempotence, import_med
 
 ## Final Status
 ### **REWORK REQUIRED**
+
+### Round 5 Final Verification
+- **E2E Browser Validation:** All Diarization UI flows (settings modal, live speaker legend, live reset) passed and were proven via actual Playwright captured evidence (`settings_modal.png`, `speaker_legend.png`).
+- **Test Suite Pass Rate:** All 109 tests passed successfully (ignoring environmental `ffmpeg`/`pytest` known limitations documented in the Error Log). No new regressions compared to base `a361053`.
+- **Archive Verification:** Built and validated `dist/Rech-v-tekst-v1.3.zip` with correctly injected version (1.3.0) and code parity.

@@ -1251,16 +1251,19 @@
           try {
             const newName = input.value.trim();
             speakerMap[spkId] = newName;
-            await apiPost('/api/session/speakers', {
+            const res = await apiPost('/api/session/speakers', {
               session_id: inspectedSessionId,
-              speakers: speakerMap,
+              speakers: { [spkId]: { display_name: newName, name_source: 'manual' } }
             });
             if (inspectedSessionData) {
-              if (inspectedSessionData.manifest) {
-                inspectedSessionData.manifest.speakers = { ...speakerMap };
-              }
-              if (inspectedSessionData.diarization) {
-                inspectedSessionData.diarization.speakers = { ...speakerMap };
+              if (res.speakers) {
+                if (inspectedSessionData.manifest) inspectedSessionData.manifest.speakers = res.speakers;
+                if (inspectedSessionData.diarization) inspectedSessionData.diarization.speakers = res.speakers;
+              } else {
+                if (inspectedSessionData.manifest) {
+                  inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
+                  inspectedSessionData.manifest.speakers[spkId] = { display_name: newName, name_source: 'manual' };
+                }
               }
             }
             // Re-render entries to update names immediately
