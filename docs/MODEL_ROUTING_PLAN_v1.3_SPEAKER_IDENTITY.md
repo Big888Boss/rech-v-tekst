@@ -4,34 +4,43 @@
 
 ### Primary Executor
 - **Agent/Application:** Antigravity
-- **Model/Effort:** Gemini 3.1 Pro Low
-- **Quota Pool:** Antigravity Gemini pool (weekly 100% remaining, 5-hour 99% remaining)
-- **Status:** AVAILABLE
-- **Role & Reason:** Primary implementation; has the necessary quota and UI/browser context for visual evidence and large implementation.
+- **Exact Model/Effort:** Gemini 3.1 Pro Low
+- **Quota Pool:** Antigravity Gemini pool
+- **Live Quota & Reset:** 100% weekly remaining, 99% 5-hour remaining. Reset time UNKNOWN.
+- **Protected Reserve:** 20% weekly, 15% 5-hour.
+- **Current Load:** AVAILABLE (No active load).
+- **Required Tools/Repo Access:** Needs full repository access, terminal execution, macOS UI testing capabilities.
+- **Expected Quota Cost:** Medium (approx. 5% of 5-hour pool).
+- **Promotion Trigger:** Not applicable (Primary).
+- **Handoff Path:** If reserve floor hit or execution fails, save diff/commit, hand off to Backup 1.
 
 ### Backup/Reviewer 1
 - **Agent/Application:** Antigravity
-- **Model/Effort:** Claude Opus 4.6 Thinking
-- **Quota Pool:** Antigravity Claude/GPT pool (weekly 36% remaining, 5-hour 100% remaining)
-- **Status:** AVAILABLE
-- **Role & Reason:** Independent review and failover; preserved for independent quota pool.
-- **Promotion Trigger:** Primary exhaustion, queuing, or need for independent architecture review.
+- **Exact Model/Effort:** Claude Opus 4.6 Thinking
+- **Quota Pool:** Antigravity Claude/GPT pool
+- **Live Quota & Reset:** 36% weekly remaining, 100% 5-hour remaining. Reset time UNKNOWN.
+- **Protected Reserve:** 20% weekly, 15% 5-hour.
+- **Current Load:** AVAILABLE (No active load).
+- **Required Tools/Repo Access:** Needs read/write repository access.
+- **Expected Quota Cost:** Low (Review only).
+- **Promotion Trigger:** Primary executor exhaustion, queuing, or need for independent architecture review. Independence is guaranteed because the Antigravity Claude/GPT pool is strictly separated from the Antigravity Gemini pool, and it is a different model family.
+- **Handoff Path:** If reserve floor hit, save state and hand off to Backup 2.
 
 ### Backup/Reviewer 2
 - **Agent/Application:** Claude Desktop
-- **Model/Effort:** Opus 5 High
-- **Quota Pool:** Claude Desktop pool (weekly 85% remaining)
-- **Status:** AVAILABLE
-- **Role & Reason:** Second independent reviewer or secondary fallback.
+- **Exact Model/Effort:** Opus 5 High
+- **Quota Pool:** Claude Desktop pool
+- **Live Quota & Reset:** 85% weekly remaining. Reset time UNKNOWN.
+- **Protected Reserve:** 20% weekly.
+- **Current Load:** AVAILABLE.
+- **Required Tools/Repo Access:** Read access for review.
+- **Expected Quota Cost:** Low.
+- **Promotion Trigger:** Backup 1 exhaustion.
+- **Handoff Path:** If exhausted, halt and notify operator.
 
 ### Other Agents (Not Assigned)
-- **Qoder Qwen3.8-Max:** BUSY on unrelated project (345/800 requests remaining).
+- **Standard Codex:** 6% remaining. RESERVED. Product implementation PROHIBITED.
+- **GPT-5.3-Codex-Spark:** 100% 5h and weekly remaining. AVAILABLE. OUT OF SCOPE for this large architecture/UI milestone.
+- **Qoder:** Qwen3.8-Max BUSY on unrelated project.
 - **Kimi:** EXHAUSTED until Sep 25.
-- **Gemini Desktop Pro:** UNKNOWN (requires probe).
-- **Root Codex standard pool:** 6% remaining (RESERVED, product implementation PROHIBITED).
-- **GPT-5.3-Codex-Spark:** 100% remaining (AVAILABLE, but OUT OF SCOPE for this large architecture and UI milestone).
-
-## Handoff Path
-If Gemini 3.1 Pro Low drops below reserve floors, save current state, branch, changed files, and next actions to a handoff document, stop assignment, and hand off to Antigravity Claude Opus 4.6 Thinking.
-
-*Note: No application changes, dependency additions, release, installation, or publication during this stage.*
+- **Gemini Desktop Pro:** UNKNOWN.

@@ -1,4 +1,4 @@
-{@path /Users/kuznetcovpavel/max/AGENTS.md}
+@/Users/kuznetcovpavel/max/AGENTS.md
 
 # Project instructions
 Canonical cross-agent policy ID: `multi-agent-governance-2026-09-09.2`.
