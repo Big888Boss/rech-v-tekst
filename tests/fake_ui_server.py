@@ -337,7 +337,10 @@ class FakeDiarizer:
             {"from_sec": 90.0, "to_sec": 95.0, "speaker": "speaker_02", "speaker_id": "speaker_02", "text": "Обсуждаем архитектурные изменения и надежность записи звука."},
         ]
         diar_block = {
-            "speakers": {"speaker_01": "Говорящий 1", "speaker_02": "Говорящий 2"},
+            "speakers": {
+                "speaker_01": {"display_name": "Анна", "name_source": "auto_intro", "name_evidence": "Меня зовут Анна"},
+                "speaker_02": {"display_name": "Говорящий 2", "name_source": "default"}
+            },
             "turns_count": 2,
             "turns": [
                 {"start": 0.0, "end": 4.5, "speaker": "speaker_01"},
@@ -351,7 +354,7 @@ class FakeDiarizer:
             m = SessionManifest(session_id=session_id)
         m.diarization_status = "completed"
         m.has_diarization = True
-        m.speakers = {"speaker_01": "Говорящий 1", "speaker_02": "Говорящий 2"}
+        m.speakers = diar_block["speakers"]
         save_session(m)
         fake_generate_all_exports(session_id)
         return {"turns_count": 2, "speakers": m.speakers}

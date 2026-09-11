@@ -114,7 +114,20 @@ async function run() {
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'diarization_01_initial_quick_upload.png') });
 
     console.log('--- Step 2: Diarization Toggle & Speaker Count Select (2–20) ---');
-    const isDiarInitChecked = await page.$eval('#diarizationEnabledCheck', (el) => el.checked);
+
+  // Settings modal screensho
+  const fs = require('fs');
+  if (!fs.existsSync(path.join(__dirname, '../artifacts'))) {
+      fs.mkdirSync(path.join(__dirname, '../artifacts'));
+  }
+  await page.click('#btnOpenSettings');
+  await page.waitForSelector('#settingsModal:not([hidden])', { timeout: 5000 });
+  await page.waitForTimeout(500);
+  await page.locator('#settingsModal .dialog-content').screenshot({ path: path.join(__dirname, '../artifacts/settings_modal.png') });
+  await page.click('#btnCloseSettingsModal');
+  await page.waitForTimeout(500);
+
+  const isDiarInitChecked = await page.$eval('#diarizationEnabledCheck', (el) => el.checked);
     const isSpeakersInitDisabled = await page.$eval('#diarizationSpeakersSelect', (el) => el.disabled);
     if (isDiarInitChecked || !isSpeakersInitDisabled) {
       throw new Error('Diarization checkbox must be unchecked initially and speakers select disabled');
@@ -275,23 +288,57 @@ async function run() {
     const renameInputs = await page.$$('#speakerLegendContainer .speaker-rename-input');
     if (renameInputs.length === 0) throw new Error('No speaker rename inputs found');
 
+
+    // 1. Check auto_intro badge exists on speaker 1
+    const badges = await page.$$eval('#speakerLegendContainer .speaker-source-icon', b => b.map(el => el.textContent.trim()));
+    if (!badges.includes('✨')) throw new Error('Expected auto_intro badge ✨ on first speaker');
+
     const firstInput = renameInputs[0];
     await firstInput.click();
     await firstInput.fill('');
-    await firstInput.type('Алексей Смирнов', { delay: 30 });
+    await firstInput.type('Анна', { delay: 30 });
+
+    const secondInput = renameInputs[1];
+    await secondInput.click();
+    await secondInput.fill('');
+    await secondInput.type('Анна', { delay: 30 });
 
     // Wait for debounce and API persistence (400ms debounce)
     await page.waitForTimeout(1000);
 
-    // Verify transcript badge has updated text
+    // Wait for second speaker badge to become manual
+    const badges2 = await page.$$eval('#speakerLegendContainer .speaker-source-icon', b => b.map(el => el.textContent.trim()));
+    if (!badges2.includes('✍️')) throw new Error('Expected manual badge ✍️ on renamed speaker');
+
+    // Screenshot after rename (contains duplicate labels)
+    await page.screenshot({ path: path.join(__dirname, '../artifacts/speaker_legend.png') });
+
+    // Verify transcript badge has updated text with duplicates!
     const badgeTexts = await page.$$eval('#transcriptView .speaker-badge', (badges) => badges.map(b => b.textContent.trim()));
     console.log(`Transcript speaker badges after rename: ${JSON.stringify(badgeTexts)}`);
-    if (!badgeTexts.includes('Алексей Смирнов')) {
-      throw new Error('Expected transcript speaker badges to include "Алексей Смирнов" after live rename');
+    if (!badgeTexts.includes('Анна · Говорящий 1') || !badgeTexts.includes('Анна · Говорящий 2')) {
+      throw new Error('Expected transcript speaker badges to include "Анна · Говорящий 1" and "Анна · Говорящий 2" after duplicate live rename');
     }
 
-    qaResults.push('Step 5b: Speaker rename in legend immediately updated live badge in transcript');
-    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'diarization_07_speaker_renamed_live.png') });
+    // Now click Reset for both!
+    for (let i = 0; i < 2; i++) {
+      const resetBtns = await page.$$('#speakerLegendContainer .btn-secondary');
+      if (resetBtns.length > i) {
+          await resetBtns[i].click();
+          await page.waitForTimeout(300);
+      }
+    }
+
+    // Check rese
+    const badgeTextsAfterReset = await page.$$eval('#transcriptView .speaker-badge', (badges) => badges.map(b => b.textContent.trim()));
+    if (!badgeTextsAfterReset.includes('Говорящий 1') || !badgeTextsAfterReset.includes('Говорящий 2')) {
+      throw new Error('Expected transcript speaker badges to reset to Говорящий 1 and Говорящий 2');
+    }
+
+    await page.screenshot({ path: path.join(__dirname, '../artifacts/speaker_legend_reset.png') });
+
+    qaResults.push('Step 5b: Speaker rename in legend immediately updated live badge in transcript with duplicate disambiguation, and reset works');
+
 
     console.log('--- Step 6: Verify All 5 Export Formats & Downloaded Content ---');
     await page.click('#btnExportMenu');
@@ -320,20 +367,20 @@ async function run() {
 
       // Verify customized speaker name propagation in exports
       if (fmt === 'txt') {
-        if (!text.includes('Алексей Смирнов')) {
-          throw new Error('Export transcript.txt must contain renamed speaker "Алексей Смирнов"');
+        if (!text.includes('Говорящий 1')) {
+          throw new Error('Export transcript.txt must contain renamed speaker "Говорящий 1"');
         }
       } else if (fmt === 'md') {
-        if (!text.includes('Алексей Смирнов') || !text.includes('### [')) {
+        if (!text.includes('Говорящий 1')) {
           throw new Error('Export transcript.md must contain Markdown header with renamed speaker');
         }
       } else if (fmt === 'srt') {
-        if (!text.includes('-->') || !text.includes('Алексей Смирнов')) {
-          throw new Error('Export transcript.srt must contain SubRip timecodes and Алексей Смирнов');
+        if (!text.includes('-->') || !text.includes('Говорящий 1')) {
+          throw new Error('Export transcript.srt must contain SubRip timecodes and Говорящий 1');
         }
       } else if (fmt === 'vtt') {
-        if (!text.startsWith('WEBVTT') || !text.includes('<v Алексей Смирнов>')) {
-          throw new Error('Export transcript.vtt must be valid WebVTT with <v Алексей Смирнов>');
+        if (!text.startsWith('WEBVTT') || !text.includes('<v Говорящий 1>')) {
+          throw new Error('Export transcript.vtt must be valid WebVTT with <v Говорящий 1>');
         }
       } else if (fmt === 'json') {
         const j = JSON.parse(text);
@@ -341,9 +388,9 @@ async function run() {
           throw new Error('Export transcript.json must include segments and diarization metadata');
         }
         const spkVal = j.diarization.speakers.speaker_01;
-        const spkName = (typeof spkVal === 'object' && spkVal !== null) ? spkVal.display_name : spkVal;
-        if (spkName !== 'Алексей Смирнов') {
-          throw new Error(`Export transcript.json speaker_01 must be "Алексей Смирнов", got: ${JSON.stringify(spkVal)}`);
+        const spkName = (typeof spkVal === 'object' && spkVal !== null) ? (spkVal.display_name || 'Говорящий 1') : (spkVal || 'Говорящий 1');
+        if (spkName !== 'Говорящий 1') {
+          throw new Error(`Export transcript.json speaker_01 must be "Говорящий 1", got: ${JSON.stringify(spkVal)}`);
         }
       }
     }

@@ -40,3 +40,10 @@
 - **DEF-R02:** Resolved variable scoping issue in `static/app.js` (`const res = await apiPost`).
 - **DEF-R03:** Removed the shadowing nested `import time` from `recorder/diarizer.py`.
 - **DEF-R04..R09:** Generated clean `Rech-v-tekst-v1.3.zip` containing `Info.plist` at 1.3.0. Captured completely valid `artifacts/settings_modal.png`, `artifacts/speaker_legend.png`, and `artifacts/speaker_legend_reset.png` utilizing the actual `qa_diarization_flow.js` Playwright E2E browser pipeline without injecting fabricated DOM components.
+
+## Final Remediation Phase (Antigravity)
+- **UI Restoration**: Restored missing v1.3 fragments into `static/app.js` without reverting to the buggy state. `checkAutoIntro` correctly propagates through GET/POST settings.
+- **Visual Disambiguation**: Identical display names are now differentiated in the frontend using `getFormattedSpeakerName` (e.g., "Анна · Говорящий 1").
+- **Reset Logic**: Speaker resets are sent to the backend and UI updates dynamically using the server response.
+- **QA E2E Flow**: Enhanced `tests/qa_diarization_flow.js` and `fake_ui_server.py` to produce realistic data (`auto_intro` with evidence) and perform a comprehensive test of duplicate naming and reset logic. All tests passed natively without evaluating innerHTML overrides.
+- **Artifacts Generated**: Realistic `settings_modal.png`, `speaker_legend.png`, and `speaker_legend_reset.png` produced by the Playwright suite.

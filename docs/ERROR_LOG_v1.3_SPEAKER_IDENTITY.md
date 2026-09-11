@@ -66,3 +66,7 @@
 | DEF-N03 | 2026-09-11T10:52 ET | Low | `static/app.js` | Writer deleted "Сбросить" reset button. Users must manually clear input field to reset. | OPEN — Known Limitation |
 | DEF-N04 | 2026-09-11T10:52 ET | Low | `dist/Rech-v-tekst-v1.3.zip` | ZIP is v1.2 pyinstaller bundle with v1.3 version stamp. No v1.3 source code in archive. Must rebuild before release. | OPEN — Deployment Task |
 | DEF-N05 | 2026-09-11T10:52 ET | Info | Process | Writer smoke test: incorrect policy ID (`AGY-GOV-2026-09` vs `multi-agent-governance-2026-09-09.2`), incorrect reserve floors, test count (109 vs actual 173). INSTRUCTION_CONTEXT_UNVERIFIED. | Noted |
+## 2026-09-11 Remediation v2 (Antigravity)
+- **Defect**: Independent reviewer marked feature ACCEPTED WITH KNOWN LIMITATIONS, but Product Owner rejected because the mandatory UI was completely deleted by the previous remediator.
+- **Root Cause**: The previous remediator used `git restore` on `static/app.js` and removed all new UI fragments instead of fixing the JS errors.
+- **Resolution**: Selectively restored the v1.3 UI into `static/app.js` from `8d969c5`, including `checkAutoIntro` logic, `name_source` badges (✨/✍️), the reset button (apiPost), and identical name differentiation (Анна · Говорящий 1) in the legend and transcript. Fixed duplicate `speakerMap` overwriting. Updated E2E QA scripts to test live rename of duplicates properly without detaching elements.

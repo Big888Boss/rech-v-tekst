@@ -920,7 +920,7 @@
     }
     lastRenderedSessionsJson = serialized;
 
-    // Track active focused element
+    // Track active focused elemen
     let activeAction = null;
     let activeSessionId = null;
     if (document.activeElement && elements.sessionsTableBody.contains(document.activeElement)) {
@@ -1237,12 +1237,37 @@
       badge.setAttribute('data-speaker-idx', spkIdx);
       badge.textContent = spkId;
 
+      // Get source and evidence
+      const spkObj = rawSpeakers[spkId] || {};
+      const source = spkObj.name_source || 'default';
+      const evidence = spkObj.name_evidence || '';
+
+      let titleMsg = "Голос распознаётся локально. Имя можно задать вручную.";
+      if (source === 'auto_intro') {
+          titleMsg = `Имя определено автоматически: представился ("${evidence}")`;
+      } else if (source === 'manual') {
+          titleMsg = "Имя задано вручную";
+      }
+
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'speaker-rename-input';
       input.value = speakerMap[spkId] || '';
       input.placeholder = `Говорящий ${spkIdx}`;
       input.setAttribute('aria-label', `Имя для ${spkId}`);
+      input.title = titleMsg;
+
+      const badgeIcon = document.createElement('span');
+      badgeIcon.className = 'speaker-source-icon';
+      badgeIcon.style.marginLeft = '4px';
+      badgeIcon.style.fontSize = '0.8em';
+      if (source === 'auto_intro') {
+          badgeIcon.textContent = '✨';
+          badgeIcon.title = titleMsg;
+      } else if (source === 'manual') {
+          badgeIcon.textContent = '✍️';
+          badgeIcon.title = titleMsg;
+      }
 
       let saveTimeout = null;
       input.addEventListener('input', () => {
@@ -1259,28 +1284,108 @@
               if (res.speakers) {
                 if (inspectedSessionData.manifest) inspectedSessionData.manifest.speakers = res.speakers;
                 if (inspectedSessionData.diarization) inspectedSessionData.diarization.speakers = res.speakers;
-              } else {
-                if (inspectedSessionData.manifest) {
-                  inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
-                  inspectedSessionData.manifest.speakers[spkId] = { display_name: newName, name_source: 'manual' };
-                }
+              } else if (inspectedSessionData.manifest) {
+                inspectedSessionData.manifest.speakers = inspectedSessionData.manifest.speakers || {};
+                inspectedSessionData.manifest.speakers[spkId] = { display_name: newName, name_source: 'manual' };
               }
             }
-            // Re-render entries to update names immediately
             renderTranscriptEntries(inspectedSessionData?.segments, inspectedSessionData?.transcript);
+            renderSpeakerLegend(inspectedSessionData?.manifest, inspectedSessionData?.segments, inspectedSessionData?.diarization);
           } catch (err) {
             console.error('Failed to update speaker name:', err);
           }
         }, 400);
       });
 
+      const btnReset = document.createElement('button');
+      btnReset.textContent = 'Сбросить';
+      btnReset.className = 'btn-secondary btn-sm';
+      btnReset.style.marginLeft = '4px';
+      btnReset.title = 'Сбросить имя';
+      btnReset.onclick = async () => {
+          try {
+              const res = await apiPost('/api/session/speakers', {
+                  session_id: inspectedSessionId,
+                  speakers: { [spkId]: { display_name: '', name_source: 'default' } }
+              });
+              input.value = '';
+              speakerMap[spkId] = '';
+              if (inspectedSessionData) {
+                  if (res.speakers) {
+                      if (inspectedSessionData.manifest) inspectedSessionData.manifest.speakers = res.speakers;
+                      if (inspectedSessionData.diarization) inspectedSessionData.diarization.speakers = res.speakers;
+                  } else if (inspectedSessionData.manifest && inspectedSessionData.manifest.speakers) {
+                      delete inspectedSessionData.manifest.speakers[spkId].display_name;
+                      delete inspectedSessionData.manifest.speakers[spkId].name_evidence;
+                      delete inspectedSessionData.manifest.speakers[spkId].name_confidence;
+                      inspectedSessionData.manifest.speakers[spkId].name_source = 'default';
+                  }
+              }
+              renderTranscriptEntries(inspectedSessionData?.segments, inspectedSessionData?.transcript);
+              renderSpeakerLegend(inspectedSessionData?.manifest, inspectedSessionData?.segments, inspectedSessionData?.diarization);
+          } catch (e) {
+              console.error('Failed to reset speaker', e);
+          }
+      };
+
+      // Set badge text to formatted name to visually distinguish duplicates!
+      badge.textContent = getFormattedSpeakerName(spkId, rawSpeakers);
+
       item.appendChild(badge);
       item.appendChild(input);
+      item.appendChild(badgeIcon);
+      item.appendChild(btnReset);
       elements.speakerLegendContainer.appendChild(item);
     });
   }
 
   // Render Transcript Entries using in-memory cached data with speaker badges (v1.1)
+
+  function getFormattedSpeakerName(spkId, speakersObj) {
+    if (!spkId || spkId === 'speaker_unknown') return 'Неизвестный';
+
+    let defaultName = spkId;
+    let spkIdx = 1;
+    const match = spkId.match(/speaker_0*(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      spkIdx = num === 0 ? 1 : num;
+      defaultName = `Говорящий ${spkIdx}`;
+    }
+
+    if (speakersObj && speakersObj[spkId]) {
+      const meta = speakersObj[spkId];
+      let disp = '';
+      if (typeof meta === 'object' && meta !== null && meta.display_name) {
+        disp = String(meta.display_name).trim();
+      } else if (typeof meta === 'string' && meta.trim()) {
+        disp = meta.trim();
+      }
+
+      if (disp) {
+        let isDuplicate = false;
+        for (const [k, v] of Object.entries(speakersObj)) {
+          if (k === spkId) continue;
+          let otherDisp = '';
+          if (typeof v === 'object' && v !== null && v.display_name) {
+            otherDisp = String(v.display_name).trim();
+          } else if (typeof v === 'string' && v.trim()) {
+            otherDisp = v.trim();
+          }
+          if (otherDisp === disp) {
+            isDuplicate = true;
+            break;
+          }
+        }
+        if (isDuplicate) {
+          return `${disp} · ${defaultName}`;
+        }
+        return disp;
+      }
+    }
+    return defaultName;
+  }
+
   function renderTranscriptEntries(segments, fallbackText) {
     elements.transcriptView.innerHTML = '';
     const query = elements.transcriptSearchInput.value.trim().toLowerCase();
@@ -1324,8 +1429,7 @@
             spkIdx = num === 0 ? 1 : ((num - 1) % 20) + 1;
           }
           badge.setAttribute('data-speaker-idx', spkIdx);
-          const customName = speakerMap[spk];
-          badge.textContent = customName || `Говорящий ${spkIdx}`;
+          badge.textContent = getFormattedSpeakerName(spk, rawMap);
           spkWrapper.appendChild(badge);
         }
 
@@ -1663,7 +1767,7 @@
     if (elements.logConsole) {
       const now = new Date().toLocaleTimeString();
       const line = `[${now}] ${msg}`;
-      elements.logConsole.textContent = elements.logConsole.textContent
+      elements.logConsole.textContent = elements.logConsole.textConten
         ? `${elements.logConsole.textContent}\n${line}`
         : line;
       elements.logConsole.scrollTop = elements.logConsole.scrollHeight;
@@ -1693,7 +1797,7 @@
     }
   }
 
-  // Upload Handling with Progress, Diagnostics, and Timeout
+  // Upload Handling with Progress, Diagnostics, and Timeou
   function handleFileUpload() {
     const file = elements.audioFileInput.files?.[0];
     if (!file) return;
@@ -2551,6 +2655,9 @@
       if (elements.checkGpuEnabled) elements.checkGpuEnabled.checked = !eff.no_gpu;
       if (elements.inputGpuThreads) elements.inputGpuThreads.value = eff.threads ?? 4;
       if (elements.inputCpuThreads) elements.inputCpuThreads.value = eff.cpu_threads ?? 2;
+      if (document.getElementById('checkAutoIntro')) {
+        document.getElementById('checkAutoIntro').checked = eff.enable_auto_intro !== false;
+      }
 
       // Env Overrides Badges
       if (elements.envBadgeWhisperBin) {
@@ -2650,6 +2757,7 @@
       threads: gpuThreads,
       cpu_threads: cpuThreads,
       no_gpu: elements.checkGpuEnabled ? !elements.checkGpuEnabled.checked : false,
+      enable_auto_intro: document.getElementById('checkAutoIntro') ? document.getElementById('checkAutoIntro').checked : true,
     };
 
     try {
