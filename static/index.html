@@ -26,6 +26,10 @@
         <p class="app-subtitle">Локальная запись встреч и вебинаров, извлечение звука из видео, распознавание речи и умный конспект.</p>
       </div>
       <div class="header-actions">
+        <button id="btnHeaderUpload" class="btn btn-primary" type="button" data-tooltip="Открыть выбор готового аудио или видео файла для импорта">
+          <span class="btn-icon" aria-hidden="true">📁</span>
+          <span>Загрузить аудио или видео</span>
+        </button>
         <button id="btnPrimaryStart" class="btn btn-primary" type="button" disabled data-tooltip="Начать запись аудио с выбранного источника" data-tooltip-disabled="Запись недоступна: выберите доступное аудиоустройство и дождитесь готовности сервера">
           <span class="btn-icon" aria-hidden="true">⏺</span>
           <span id="btnPrimaryStartLabel">Начать запись</span>
@@ -34,10 +38,13 @@
     </header>
 
     <main id="mainContent" class="app-main" role="main">
-      <!-- Network & Server Status Banner (Offline / Stale) -->
-      <div id="connectionBanner" class="banner banner-warning" role="alert" hidden>
-        <span class="banner-icon" aria-hidden="true">⚠️</span>
-        <span id="connectionBannerText" class="banner-text">Соединение с локальным сервером прервано.</span>
+            <!-- Network & Server Status Banner (Offline / Stale) -->
+      <div id="connectionBanner" class="banner banner-warning" role="alert" hidden style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span class="banner-icon" aria-hidden="true">⚠️</span>
+          <span id="connectionBannerText" class="banner-text">Соединение с локальным сервером прервано.</span>
+        </div>
+        <button id="btnConnectionRetry" class="btn btn-sm btn-secondary" type="button" data-tooltip="Перезапустить опрос сервера" style="margin-left: var(--ad-space-4);">Повторить</button>
       </div>
 
       <!-- Welcome, Visual Route & Quick Help Bar -->
@@ -58,12 +65,20 @@
               <span aria-hidden="true">📖</span>
               <span>Возможности и помощь</span>
             </button>
-            <a id="btnOpenFeaturesDoc" href="/static/FEATURES.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полное руководство возможностей в отдельной вкладке">
+            <button id="btnBugReportOpen" class="btn btn-secondary" type="button" aria-haspopup="dialog" data-tooltip="Сообщить об ошибке разработчикам">
+              <span aria-hidden="true">🐛</span>
+              <span>Сообщить об ошибке</span>
+            </button>
+            <a id="btnOpenFeaturesDoc" href="/static/USER_GUIDE_RU.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полное руководство возможностей в отдельной вкладке">
               <span aria-hidden="true">📖</span>
               <span>Полное руководство ↗</span>
             </a>
-            <button id="btnToggleHintsMode" class="btn btn-quiet" type="button" aria-pressed="false" data-tooltip="Включить безопасный режим подсказок: нажатие на любую кнопку покажет её описание без выполнения действия" data-tooltip-disabled="Режим подсказок доступен всегда">
+            <button id="btnToggleOnboarding" class="btn btn-quiet" type="button" aria-pressed="false" data-tooltip="Включить/выключить отображение чеклиста первого запуска">
               <span aria-hidden="true">💡</span>
+              <span id="btnToggleOnboardingText">Показать подсказки</span>
+            </button>
+            <button id="btnToggleHintsMode" class="btn btn-quiet" type="button" aria-pressed="false" data-tooltip="Включить безопасный режим подсказок: нажатие на любую кнопку покажет её описание без выполнения действия" data-tooltip-disabled="Режим подсказок доступен всегда">
+              <span aria-hidden="true">🔎</span>
               <span id="btnToggleHintsModeText">Режим подсказок: выкл</span>
             </button>
           </div>
@@ -96,21 +111,35 @@
           </div>
         </div>
 
+        <!-- Onboarding Checklist -->
+        <div id="onboardingChecklist" class="onboarding-checklist" style="display: none;">
+          <div class="onboarding-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 1rem; color: var(--ad-color-text-strong);">Чеклист первого запуска</h3>
+            <button id="btnDismissOnboarding" class="btn btn-quiet btn-sm" type="button" data-tooltip="Скрыть чеклист. Позже его можно вернуть через «Показать подсказки»">✕ Скрыть</button>
+          </div>
+          <ol class="onboarding-steps" style="margin: var(--ad-space-2) 0 0; padding-left: var(--ad-space-4); line-height: 1.5;">
+            <li><strong>Источник:</strong> Выберите микрофон, системный звук (BlackHole) или нажмите «Загрузить аудио или видео».</li>
+            <li><strong>Язык:</strong> Оставьте автоопределение или выберите русский/английский.</li>
+            <li><strong>Готовность:</strong> <span id="onboardingStatusMsg">Проверка...</span></li>
+            <li><strong>Старт:</strong> Нажмите «Начать запись» в верхнем правом углу.</li>
+          </ol>
+        </div>
+
         <!-- Collapsible In-Page Help Panel with Embedded Full Manual -->
         <div id="helpPanel" class="help-panel" hidden>
           <div class="help-panel-header">
-            <h3 class="help-panel-title">Полное руководство и возможности (FEATURES.md)</h3>
+            <h3 class="help-panel-title">Руководство пользователя (USER_GUIDE_RU.md)</h3>
             <div class="help-panel-actions">
-              <a id="btnDownloadFeaturesDoc" href="/static/FEATURES.md" class="btn btn-quiet" download="FEATURES.md" data-tooltip="Скачать полный файл документации FEATURES.md">⬇ Скачать FEATURES.md</a>
-              <a id="btnOpenFeaturesDocPanel" href="/static/FEATURES.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полную документацию в новой вкладке">Открыть в новой вкладке ↗</a>
+              <a id="btnDownloadFeaturesDoc" href="/static/USER_GUIDE_RU.md" class="btn btn-quiet" download="USER_GUIDE_RU.md" data-tooltip="Скачать руководство пользователя USER_GUIDE_RU.md">⬇ Скачать USER_GUIDE_RU.md</a>
+              <a id="btnOpenFeaturesDocPanel" href="/static/USER_GUIDE_RU.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полную документацию в новой вкладке">Открыть в новой вкладке ↗</a>
               <button id="btnCloseHelpPanel" class="btn btn-quiet" type="button" aria-label="Свернуть справочник" data-tooltip="Свернуть панель справочника">✕ Свернуть</button>
             </div>
           </div>
           <div id="helpDocContainer" class="help-doc-container" aria-live="polite">
-            <div id="helpDocLoading" class="help-doc-status">Загрузка полного текста руководства из FEATURES.md...</div>
+            <div id="helpDocLoading" class="help-doc-status">Загрузка полного текста руководства из USER_GUIDE_RU.md...</div>
             <div id="helpDocError" class="banner banner-danger" role="alert" hidden>
               <span id="helpDocErrorText">Не удалось загрузить текст руководства. Вы можете открыть или скачать файл по ссылкам выше.</span>
-              <button id="btnRetryHelpDoc" class="btn btn-secondary btn-sm" type="button" data-tooltip="Повторить попытку загрузки руководства FEATURES.md">Повторить загрузку</button>
+              <button id="btnRetryHelpDoc" class="btn btn-secondary btn-sm" type="button" data-tooltip="Повторить попытку загрузки руководства USER_GUIDE_RU.md">Повторить загрузку</button>
             </div>
             <div id="helpDocContent" class="help-doc-content" hidden></div>
           </div>
@@ -134,7 +163,7 @@
               <label for="sourceSelect" class="form-label" style="margin-bottom: 0;">Источник записи</label>
               <button type="button" id="btnQuickUpload" class="btn btn-quiet btn-sm" data-tooltip="Открыть выбор готового аудио или видео файла для импорта">📁 Импорт файла (аудио/видео)</button>
             </div>
-            <select id="sourceSelect" class="form-select">
+            <select id="sourceSelect" class="form-select" data-tooltip="Выберите источник записи: микрофон, звук системы или импорт файла">
               <option value="zoom" selected>Zoom / Системный звук (BlackHole)</option>
               <option value="mic">Микрофон (Офлайн-встреча)</option>
               <option value="upload">Готовый аудио/видео файл (Импорт)</option>
@@ -143,19 +172,19 @@
 
           <div class="form-group" id="deviceSelectGroup">
             <label for="deviceSelect" class="form-label">Устройство входа</label>
-            <select id="deviceSelect" class="form-select">
+            <select id="deviceSelect" class="form-select" data-tooltip="Выберите конкретное аудиоустройство из списка">
               <option value="">Поиск устройств...</option>
             </select>
           </div>
 
           <div class="form-group" id="sessionTitleGroup">
             <label for="sessionTitleInput" class="form-label">Название вебинара / встречи</label>
-            <input id="sessionTitleInput" type="text" class="form-input" placeholder="Название (необязательно)" maxlength="100">
+            <input id="sessionTitleInput" type="text" class="form-input" placeholder="Название (необязательно)" maxlength="100" data-tooltip="Введите название для новой записи (по умолчанию будет дата)">
           </div>
 
           <div class="form-group" id="languageSelectGroup">
             <label for="languageSelect" class="form-label">Язык речи</label>
-            <select id="languageSelect" class="form-select">
+            <select id="languageSelect" class="form-select" data-tooltip="Выберите язык для улучшения качества распознавания или оставьте автоопределение">
               <option value="ru" selected>Русский</option>
               <option value="en">Английский</option>
               <option value="auto">Автоопределение</option>
@@ -166,10 +195,10 @@
             <label class="form-label" for="diarizationEnabledCheck">Разделение по голосам</label>
             <div class="form-row-compact" style="display: flex; gap: var(--ad-space-2); align-items: center;">
               <label class="form-checkbox-label" style="margin: 0; min-height: var(--ad-control-height); display: flex; align-items: center;">
-                <input type="checkbox" id="diarizationEnabledCheck" class="form-checkbox">
+                <input type="checkbox" id="diarizationEnabledCheck" class="form-checkbox" data-tooltip="Включить разделение по спикерам (может замедлить процесс)">
                 <span class="checkbox-label">Диаризация</span>
               </label>
-              <select id="diarizationSpeakersSelect" class="form-select" style="inline-size: auto; flex: 1;" disabled aria-label="Количество говорящих">
+              <select id="diarizationSpeakersSelect" class="form-select" style="inline-size: auto; flex: 1;" disabled aria-label="Количество говорящих" data-tooltip="Укажите количество говорящих, если известно">
                 <option value="0" selected>Авто (2–20)</option>
                 <option value="2">2 говорящих</option>
                 <option value="3">3 говорящих</option>
@@ -209,7 +238,7 @@
           </div>
           <div class="form-group file-upload-group">
             <label for="audioFileInput" class="form-label">Выберите аудио/видео файл для импорта</label>
-            <input id="audioFileInput" type="file" class="form-file" accept="audio/*,video/*,.m4a,.mp3,.wav,.mp4,.mov,.aac,.caf,.aif,.aiff,.flac,.ogg">
+            <input id="audioFileInput" type="file" class="form-file" accept="audio/*,video/*,.m4a,.mp3,.wav,.mp4,.mov,.aac,.caf,.aif,.aiff,.flac,.ogg" data-tooltip="Выберите аудио или видео файл с диска">
           </div>
           <div id="uploadProgressContainer" class="progress-block" hidden>
             <div class="progress-bar-wrapper">
@@ -280,8 +309,8 @@
         <div class="table-header-row">
           <h2 id="sessionsHeading" class="section-title">Библиотека записей</h2>
           <div class="table-tools">
-            <input id="sessionFilterInput" type="search" class="form-input search-input" placeholder="Поиск по названию или ID..." aria-label="Поиск по сессиям">
-            <select id="statusFilterSelect" class="form-select status-filter" aria-label="Фильтр по статусу">
+            <input id="sessionFilterInput" type="search" class="form-input search-input" placeholder="Поиск по названию или ID..." aria-label="Поиск по сессиям" data-tooltip="Начните вводить текст для поиска по списку записей">
+            <select id="statusFilterSelect" class="form-select status-filter" aria-label="Фильтр по статусу" data-tooltip="Отфильтровать список записей по их статусу">
               <option value="all">Все статусы</option>
               <option value="completed">Готовые</option>
               <option value="ready">Ожидают обработки</option>
@@ -421,7 +450,7 @@
 
         <div id="panelTranscript" class="tab-panel" role="tabpanel" aria-labelledby="tabTranscript">
           <div class="search-bar-inline">
-            <input id="transcriptSearchInput" type="search" class="form-input" placeholder="Поиск в расшифровке..." aria-label="Поиск в расшифровке">
+            <input id="transcriptSearchInput" type="search" class="form-input" placeholder="Поиск в расшифровке..." aria-label="Поиск в расшифровке" data-tooltip="Поиск слов или фраз в текущей расшифровке">
           </div>
           <div id="speakerLegendContainer" class="speaker-legend" hidden>
             <!-- Speaker legend and rename inputs rendered dynamically -->
@@ -460,7 +489,7 @@
         <form id="summaryForm" method="dialog">
           <div class="form-group">
             <label for="summaryTemplateSelect" class="form-label">Шаблон структуры</label>
-            <select id="summaryTemplateSelect" class="form-select">
+            <select id="summaryTemplateSelect" class="form-select" data-tooltip="Выберите формат итогового конспекта">
               <option value="meeting" selected>Встреча / Вебинар (Резюме, Темы, Решения, Задачи)</option>
               <option value="lecture">Лекция (Понятия, Логика, Примеры, Вопросы)</option>
               <option value="interview">Интервью (Позиция, Аргументы, Выводы)</option>
@@ -470,7 +499,7 @@
 
           <div class="form-group">
             <label for="summaryProviderSelect" class="form-label">Провайдер</label>
-            <select id="summaryProviderSelect" class="form-select">
+            <select id="summaryProviderSelect" class="form-select" data-tooltip="Выберите нейросеть для генерации конспекта">
               <option value="none">Локально (без ИИ / конфиденциально)</option>
               <option value="claude" selected>Claude CLI (с отключёнными инструментами --tools "")</option>
               <option value="codex" disabled>Codex CLI (отключено: sandbox разрешает чтение файлов)</option>
@@ -487,7 +516,7 @@
 
           <div class="form-checkbox-container">
             <label for="summaryOptInCheck" class="form-checkbox-label">
-              <input type="checkbox" id="summaryOptInCheck" class="form-checkbox">
+              <input type="checkbox" id="summaryOptInCheck" class="form-checkbox" data-tooltip="Подтвердите согласие на отправку текста для генерации саммари">
               <span class="checkbox-label">Подтверждаю отправку расшифровки для составления конспекта</span>
             </label>
           </div>
@@ -536,6 +565,37 @@
         </form>
       </div>
       <div id="queueDialogTooltip" class="app-floating-tooltip" role="tooltip" aria-hidden="true"></div>
+    </dialog>
+
+    <!-- Dialog: Bug Report (Сообщить об ошибке) -->
+    <dialog id="bugReportModal" class="app-dialog" aria-labelledby="bugReportTitle">
+      <div class="dialog-content">
+        <div class="settings-dialog-header">
+          <h3 id="bugReportTitle" class="dialog-title">Сообщить об ошибке</h3>
+          <button id="btnBugReportClose" class="btn btn-quiet" type="button" aria-label="Закрыть окно" data-tooltip="Закрыть окно сообщения об ошибке">✕</button>
+        </div>
+        <p class="dialog-desc">
+          Скопируйте шаблон отчета и вставьте его при создании новой проблемы на GitHub.
+        </p>
+        <div class="callout callout-warning">
+          <p class="callout-title">⚠️ ВНИМАНИЕ: Конфиденциальность данных</p>
+          <p class="callout-text">
+            Перед отправкой убедитесь, что вы удалили все личные или конфиденциальные данные (записи, расшифровки, логи). НЕ прикрепляйте аудио или текстовые файлы, содержащие чувствительную информацию.
+          </p>
+        </div>
+        <div class="form-group">
+          <textarea id="bugReportTemplateContent" class="form-input font-mono" rows="12" readonly aria-label="Шаблон отчета об ошибке"></textarea>
+        </div>
+        <div class="dialog-actions-container">
+          <div class="dialog-actions" style="justify-content: flex-start; gap: 8px;">
+            <button id="btnBugReportCopy" class="btn btn-secondary" type="button" data-tooltip="Скопировать сгенерированный шаблон в буфер обмена">Скопировать шаблон</button>
+            <a id="btnBugReportOpenGitHub" href="https://github.com/Big888Boss/rech-v-tekst/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-tooltip="Перейти на GitHub для создания отчета (откроется в браузере)">Открыть GitHub Issues</a>
+          </div>
+          <div class="dialog-actions-hints" style="margin-top: 8px;">
+            <span id="bugReportStatusFeedback" class="dialog-action-hint font-mono" aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
     </dialog>
 
     <!-- Dialog: Application Settings & Scenario Readiness -->
@@ -673,7 +733,7 @@
                 Пользовательский путь к whisper-cli:
                 <span class="env-badge" id="envBadgeWhisperBin" hidden>переопределено переменной WHISPER_BIN</span>
               </label>
-              <input type="text" id="inputWhisperBin" class="form-input code-font" placeholder="По умолчанию: work/bin/whisper-cli">
+              <input type="text" id="inputWhisperBin" class="form-input code-font" placeholder="По умолчанию: work/bin/whisper-cli" data-tooltip="Укажите путь к исполняемому файлу Whisper CLI">
               <div class="form-hint">Оставьте пустым для использования встроенного бинарного файла проекта.</div>
             </div>
 
@@ -682,7 +742,7 @@
                 Пользовательский путь к модели:
                 <span class="env-badge" id="envBadgeModelPath" hidden>переопределено переменной WHISPER_MODEL_PATH</span>
               </label>
-              <input type="text" id="inputModelPath" class="form-input code-font" placeholder="По умолчанию: models/ggml-large-v3-turbo.bin">
+              <input type="text" id="inputModelPath" class="form-input code-font" placeholder="По умолчанию: models/ggml-large-v3-turbo.bin" data-tooltip="Укажите путь к модели Whisper (ggml формат)">
               <div class="form-hint">Поддерживается официальная проверенная модель large-v3-turbo (~1.6 ГБ, SHA-256).</div>
             </div>
 
@@ -692,7 +752,7 @@
                   Язык распознавания:
                   <span class="env-badge" id="envBadgeLanguage" hidden>переопределено переменной WHISPER_LANG</span>
                 </label>
-                <select id="selectLanguage" class="form-select">
+                <select id="selectLanguage" class="form-select" data-tooltip="Язык по умолчанию для новых записей">
                   <option value="ru">Русский (ru)</option>
                   <option value="en">Английский (en)</option>
                   <option value="auto">Автоопределение (auto)</option>
@@ -703,7 +763,7 @@
               <div class="form-group" style="margin-top: 1rem;">
                 <label class="form-label">Идентификация дикторов:</label>
                 <label class="form-checkbox-label">
-                  <input type="checkbox" id="checkAutoIntro" checked>
+                  <input type="checkbox" id="checkAutoIntro" checked data-tooltip="Автоматически пропускать начальную тишину при импорте">
                   Автоматически привязывать имя по самопредставлению
                 </label>
                 <div class="form-hint" style="margin-left: 28px;">
@@ -716,7 +776,7 @@
                   <span class="env-badge" id="envBadgeNoGpu" hidden>переопределено переменной WHISPER_NO_GPU</span>
                 </label>
                 <label class="form-checkbox-label">
-                  <input type="checkbox" id="checkGpuEnabled" class="form-checkbox" checked>
+                  <input type="checkbox" id="checkGpuEnabled" class="form-checkbox" checked data-tooltip="Разрешить использование Metal/GPU для ускорения распознавания">
                   <span class="checkbox-label">Использовать ускорение Metal GPU</span>
                 </label>
               </div>
@@ -728,7 +788,7 @@
                   Потоки GPU:
                   <span class="env-badge" id="envBadgeThreads" hidden>переопределено WHISPER_THREADS</span>
                 </label>
-                <input type="number" id="inputGpuThreads" class="form-input" min="1" max="32" value="4">
+                <input type="number" id="inputGpuThreads" class="form-input" min="1" max="32" value="4" data-tooltip="Укажите количество потоков для GPU">
               </div>
 
               <div class="form-group">
@@ -736,7 +796,7 @@
                   Потоки CPU:
                   <span class="env-badge" id="envBadgeCpuThreads" hidden>переопределено WHISPER_CPU_THREADS</span>
                 </label>
-                <input type="number" id="inputCpuThreads" class="form-input" min="1" max="32" value="2">
+                <input type="number" id="inputCpuThreads" class="form-input" min="1" max="32" value="2" data-tooltip="Укажите количество потоков для CPU">
               </div>
             </div>
           </div>

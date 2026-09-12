@@ -1646,3 +1646,30 @@ body.show-button-hints button[data-tooltip] {
     grid-template-columns: 1fr;
   }
 }
+
+/* Onboarding Checklist */
+.onboarding-checklist {
+  background-color: var(--ad-color-bg-base);
+  border: 1px solid var(--ad-color-border-subtle);
+  border-radius: var(--ad-radius-lg);
+  padding: var(--ad-space-4);
+  margin-top: var(--ad-space-4);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.onboarding-header h3 {
+  font-weight: 600;
+}
+
+.onboarding-steps li {
+  margin-bottom: var(--ad-space-2);
+  color: var(--ad-color-text-base);
+}
+
+.onboarding-steps li strong {
+  color: var(--ad-color-text-strong);
+}
+
+#btnConnectionRetry {
+  flex-shrink: 0;
+}

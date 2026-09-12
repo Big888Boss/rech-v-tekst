@@ -161,6 +161,18 @@
     btnCancelQueueRemove: el('btnCancelQueueRemove'),
     btnConfirmQueueRemove: el('btnConfirmQueueRemove'),
     queueDialogTooltip: el('queueDialogTooltip'),
+    btnHeaderUpload: el('btnHeaderUpload'),
+    btnBugReportOpen: el('btnBugReportOpen'),
+    bugReportModal: el('bugReportModal'),
+    btnBugReportClose: el('btnBugReportClose'),
+    btnBugReportCopy: el('btnBugReportCopy'),
+    bugReportTemplateContent: el('bugReportTemplateContent'),
+    bugReportStatusFeedback: el('bugReportStatusFeedback'),
+    onboardingChecklist: el('onboardingChecklist'),
+    btnDismissOnboarding: el('btnDismissOnboarding'),
+    btnToggleOnboarding: el('btnToggleOnboarding'),
+    btnToggleOnboardingText: el('btnToggleOnboardingText'),
+    onboardingStatusMsg: el('onboardingStatusMsg'),
     btnOpenSettings: el('btnOpenSettings'),
     settingsModal: el('settingsModal'),
     btnCloseSettingsModal: el('btnCloseSettingsModal'),
@@ -794,6 +806,19 @@
           elements.preflightMessage.textContent = `Выбрано: ${selName}${rateInfo}. Захват не тестировался. Нажмите «Проверить уровень».`;
         } else {
           elements.preflightMessage.textContent = `Выбрано: ${selName}${rateInfo}. Доступ предоставлен. Нажмите «Проверить уровень» для проверки звука.`;
+        }
+      }
+
+      // Update onboarding status
+      if (elements.onboardingStatusMsg) {
+        if (isBlackHoleNotFound) {
+          elements.onboardingStatusMsg.textContent = '❌ BlackHole не установлен.';
+        } else if (lastPermissions === 'denied' || pf.permissions === false) {
+          elements.onboardingStatusMsg.textContent = '⚠️ Разрешите доступ к микрофону в системных настройках macOS.';
+        } else if (pf.volume_check && pf.volume_check.status === 'ok') {
+          elements.onboardingStatusMsg.textContent = '✅ Источник готов (звук обнаружен).';
+        } else {
+          elements.onboardingStatusMsg.textContent = '⚪️ Источник выбран (не проверено).';
         }
       }
     } catch (err) {
@@ -2874,13 +2899,14 @@
   });
 
   // Safe Markdown Document Renderer for embedded manual (no innerHTML execution)
+  window.renderMarkdownSafely = renderMarkdownSafely;
   function renderMarkdownSafely(rawMd, container) {
     container.innerHTML = '';
     if (!rawMd) return;
 
     function formatInline(text) {
       const fragment = document.createDocumentFragment();
-      const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+      const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)]+\))/g;
       let lastIndex = 0;
       let match;
       while ((match = tokenRegex.exec(text)) !== null) {
@@ -2896,6 +2922,18 @@
           const code = document.createElement('code');
           code.textContent = token.slice(1, -1);
           fragment.appendChild(code);
+        } else if (token.startsWith('[')) {
+          const m = token.match(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/);
+          if (m) {
+            const a = document.createElement('a');
+            a.textContent = m[1];
+            a.href = m[2];
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            fragment.appendChild(a);
+          } else {
+            fragment.appendChild(document.createTextNode(token));
+          }
         }
         lastIndex = tokenRegex.lastIndex;
       }
@@ -3034,7 +3072,7 @@
         controller.abort();
       }, 6000);
 
-      const resp = await fetch('/static/FEATURES.md', { signal: controller.signal });
+      const resp = await fetch('/docs/USER_GUIDE_RU.md', { signal: controller.signal });
       if (!resp.ok) {
         throw new Error(`HTTP ${resp.status}`);
       }
@@ -3054,9 +3092,9 @@
       if (elements.helpDocError) {
         const msg = err.name === 'AbortError' ? 'Превышено время ожидания 6 сек' : err.message;
         if (elements.helpDocErrorText) {
-          elements.helpDocErrorText.textContent = `Не удалось загрузить руководство (${msg}). Вы можете нажать «Повторить загрузку» или открыть FEATURES.md по ссылкам в шапке панели.`;
+          elements.helpDocErrorText.textContent = `Не удалось загрузить руководство (${msg}). Вы можете нажать «Повторить загрузку» или открыть USER_GUIDE_RU.md по ссылкам в шапке панели.`;
         } else {
-          elements.helpDocError.textContent = `Не удалось загрузить руководство (${msg}). Вы можете открыть или скачать FEATURES.md по ссылкам в шапке панели.`;
+          elements.helpDocError.textContent = `Не удалось загрузить руководство (${msg}). Вы можете открыть или скачать USER_GUIDE_RU.md по ссылкам в шапке панели.`;
         }
         elements.helpDocError.hidden = false;
       }
@@ -3317,7 +3355,106 @@
     });
   }
 
-  // Keyboard shortcut: Escape closes modal/dropdown/tooltip/help (A11Y-007, M04)
+
+  // Implementation of btnConnectionRetry
+  const btnConnectionRetry = document.getElementById('btnConnectionRetry');
+  if (btnConnectionRetry) {
+    btnConnectionRetry.addEventListener('click', () => {
+      if (elements.connectionBannerText) {
+        elements.connectionBannerText.textContent = 'Подключение...';
+      }
+      pollStatus();
+    });
+  }
+
+  // Implementation of btnHeaderUpload
+  if (elements.btnHeaderUpload) {
+    elements.btnHeaderUpload.addEventListener('click', () => {
+      elements.sourceSelect.value = 'upload';
+      elements.sourceSelect.dispatchEvent(new Event('change'));
+    });
+  }
+
+  // Implementation of Bug Report Modal
+  if (elements.btnBugReportOpen && elements.bugReportModal) {
+    elements.btnBugReportOpen.addEventListener('click', () => {
+      const template = `**⚠️ ВНИМАНИЕ: Конфиденциальность данных**
+Перед отправкой убедитесь, что вы удалили все личные или конфиденциальные данные (записи, расшифровки, логи). НЕ прикрепляйте аудио или текстовые файлы, содержащие чувствительную информацию.
+
+**Версия macOS и приложения:**
+(укажите)
+
+**Источник ввода / Тип файла:**
+${elements.sourceSelect ? elements.sourceSelect.value : 'неизвестно'}
+
+**Шаги для воспроизведения:**
+1.
+2.
+3.
+
+**Ожидаемый результат:**
+
+
+**Фактический результат и точная ошибка:**
+
+
+**Состояние микрофона / BlackHole:**
+Микрофон: ${lastPermissions}, Устройство: ${lastPermissionsDevice}
+
+**Логи или экспорт:**
+`;
+      elements.bugReportTemplateContent.value = template;
+      elements.bugReportModal.showModal();
+      elements.btnBugReportCopy.focus();
+    });
+
+    elements.btnBugReportClose.addEventListener('click', () => {
+      elements.bugReportModal.close();
+    });
+
+    elements.bugReportModal.addEventListener('close', () => {
+      elements.btnBugReportOpen.focus();
+    });
+
+    elements.btnBugReportCopy.addEventListener('click', () => {
+      navigator.clipboard.writeText(elements.bugReportTemplateContent.value).then(() => {
+        elements.bugReportStatusFeedback.textContent = 'Шаблон скопирован!';
+        setTimeout(() => { elements.bugReportStatusFeedback.textContent = ''; }, 3000);
+      });
+    });
+  }
+
+  // Implementation of Onboarding Checklist
+  if (elements.onboardingChecklist) {
+    const isHidden = localStorage.getItem('rech_hide_onboarding') === 'true';
+    elements.onboardingChecklist.style.display = isHidden ? 'none' : 'block';
+
+    if (elements.btnToggleOnboarding) {
+        elements.btnToggleOnboarding.setAttribute('aria-pressed', String(!isHidden));
+        elements.btnToggleOnboardingText.textContent = isHidden ? 'Показать подсказки' : 'Скрыть подсказки';
+
+        elements.btnToggleOnboarding.addEventListener('click', () => {
+            const currentlyHidden = elements.onboardingChecklist.style.display === 'none';
+            elements.onboardingChecklist.style.display = currentlyHidden ? 'block' : 'none';
+            localStorage.setItem('rech_hide_onboarding', String(!currentlyHidden));
+            elements.btnToggleOnboarding.setAttribute('aria-pressed', String(currentlyHidden));
+            elements.btnToggleOnboardingText.textContent = currentlyHidden ? 'Скрыть подсказки' : 'Показать подсказки';
+        });
+    }
+
+    if (elements.btnDismissOnboarding) {
+        elements.btnDismissOnboarding.addEventListener('click', () => {
+            elements.onboardingChecklist.style.display = 'none';
+            localStorage.setItem('rech_hide_onboarding', 'true');
+            if (elements.btnToggleOnboarding) {
+                elements.btnToggleOnboarding.setAttribute('aria-pressed', 'false');
+                elements.btnToggleOnboardingText.textContent = 'Показать подсказки';
+            }
+        });
+    }
+  }
+
+// Keyboard shortcut: Escape closes modal/dropdown/tooltip/help (A11Y-007, M04)
   document.addEventListener('keydown', (evt) => {
     if (evt.key === 'Escape') {
       if (hideTooltipGlobal) {

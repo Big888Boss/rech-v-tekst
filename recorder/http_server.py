@@ -218,6 +218,9 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
             elif path.startswith("/static/"):
                 rel_path = path[len("/static/"):]
                 self.serve_static_file(rel_path)
+            elif path.startswith("/docs/"):
+                rel_path = path[len("/docs/"):]
+                self.serve_docs_file(rel_path)
             elif path == "/api/status":
                 self.handle_api_status()
             elif path == "/api/sessions":
@@ -406,6 +409,41 @@ class HardenedHTTPHandler(BaseHTTPRequestHandler):
         content_type = forced_mime or mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
         try:
             data = safe_read_file(file_path, root=STATIC_DIR)
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", f"{content_type}; charset=utf-8" if "text/" in content_type else content_type)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Frame-Options", "DENY")
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            self.wfile.write(data)
+        except StorageError as exc:
+            self.send_error_json(HTTPStatus.FORBIDDEN, str(exc))
+
+    def serve_docs_file(self, rel_path: str) -> None:
+        docs_dir = (STATIC_DIR.parent / "docs").resolve()
+        if not docs_dir.exists():
+            self.send_error_json(HTTPStatus.NOT_FOUND, "Docs directory missing")
+            return
+
+        unquoted = unquote(rel_path)
+        if "/" in unquoted or "\\" in unquoted or ".." in unquoted:
+            self.send_error_json(HTTPStatus.FORBIDDEN, "Path traversal forbidden")
+            return
+
+        clean_rel = Path(unquoted).name
+        file_path = (docs_dir / clean_rel).resolve()
+        if not file_path.is_relative_to(docs_dir):
+            self.send_error_json(HTTPStatus.FORBIDDEN, "Path traversal forbidden")
+            return
+
+        if not is_safe_regular_file(file_path):
+            self.send_error_json(HTTPStatus.NOT_FOUND, "File not found")
+            return
+
+        content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
+        try:
+            data = safe_read_file(file_path, root=docs_dir)
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", f"{content_type}; charset=utf-8" if "text/" in content_type else content_type)
             self.send_header("Content-Length", str(len(data)))

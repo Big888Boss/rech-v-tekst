@@ -21,7 +21,7 @@
 
 ## Implementation Options
 ### Option 2: Web-based HTML/JS Integration (Selected)
-Enhance the existing `static/index.html`, `static/app.js`, and `static/app.css` to include the onboarding flow, settings persistence, and bug report modal. 
+Enhance the existing `static/index.html`, `static/app.js`, and `static/app.css` to include the onboarding flow, settings persistence, and bug report modal.
 **Chosen Synchronization Design:** Use `docs/USER_GUIDE_RU.md` as the single canonical source. To ensure it works inside the packaged macOS app offline, `docs/` will be added to the `datas` array in `build.spec`, and a `/docs/` route will be added to `recorder/http_server.py`'s `do_GET` handler. The frontend will fetch `/docs/USER_GUIDE_RU.md` and render it safely into the «Инструкция» panel.
 
 ## Control Inventory for Tooltips
@@ -46,11 +46,11 @@ Every meaningful button/control must have a Russian tooltip. This includes exist
 
 ## Verification Plan
 - **Automated Tests**: While `tests/test_layout_and_tooltips_e2e.py` exists, it does not explicitly cover the new onboarding sequence. Therefore, no fully suitable automated test currently exists for the onboarding UI. A new focused test `tests/test_onboarding_ux.py` will be created to verify the onboarding checklist, safe markdown rendering, and tooltip presence.
-  - **Commands**: 
+  - **Commands**:
     `pytest tests/test_layout_and_tooltips_e2e.py`
     `pytest tests/test_onboarding_ux.py`
   - **Expected**: All tests pass (Success).
-- **Evidence Matrix (Real Screenshots/Video)**: 
+- **Evidence Matrix (Real Screenshots/Video)**:
   - Initial screen showing onboarding checklist.
   - Checklist dismissed, then reopened via "Показать подсказки" (localStorage).
   - Instruction panel showing inline rendered markdown guide offline (safe rendering).

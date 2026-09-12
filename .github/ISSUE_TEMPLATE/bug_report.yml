@@ -1,0 +1,79 @@
+name: Сообщение об ошибке (Bug Report)
+description: Создать отчет о проблеме для улучшения программы
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **⚠️ ВНИМАНИЕ: Конфиденциальность данных**
+        Перед отправкой убедитесь, что вы удалили все личные или конфиденциальные данные (записи, расшифровки, логи). НЕ прикрепляйте аудио или текстовые файлы, содержащие чувствительную информацию.
+  - type: input
+    id: version
+    attributes:
+      label: Версия macOS и приложения
+      description: Укажите вашу версию macOS и версию приложения (если известна).
+      placeholder: macOS 14.2, App v1.3.1
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Источник ввода
+      description: Откуда поступает звук?
+      options:
+        - Микрофон
+        - Захват системы (BlackHole)
+        - Загруженный файл
+    validations:
+      required: true
+  - type: input
+    id: file_type
+    attributes:
+      label: Тип файла (если применимо)
+      description: Если вы загружаете файл, укажите его формат (MP3, MP4, M4A, WAV, MOV, MKV).
+      placeholder: MP3
+  - type: input
+    id: duration
+    attributes:
+      label: Длительность файла (если применимо)
+      description: Если вы загружаете файл, укажите его примерную длительность (в минутах или часах).
+      placeholder: 45 минут
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги для воспроизведения
+      description: Как именно мы можем повторить ошибку?
+      placeholder: |
+        1. Запустил приложение...
+        2. Нажал кнопку...
+        3. Выбрал файл...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемый результат
+      description: Что должно было произойти?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Фактический результат и точная ошибка
+      description: Что произошло на самом деле? Скопируйте текст ошибки, если он есть.
+    validations:
+      required: true
+  - type: input
+    id: audio_status
+    attributes:
+      label: Состояние микрофона / BlackHole
+      description: Разрешен ли доступ к микрофону? Установлен ли BlackHole?
+      placeholder: Микрофон: Да, BlackHole: Установлен
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи или экспорт (если безопасно)
+      description: Прикрепите логи или снимок экрана, предварительно удалив личные данные.
