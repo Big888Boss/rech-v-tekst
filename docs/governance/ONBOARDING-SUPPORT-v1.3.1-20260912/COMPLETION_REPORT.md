@@ -2,10 +2,14 @@
 
 **Session ID:** b61a6997-87e4-465f-9a2f-29e9785b0c1d
 **Model:** Gemini 3.1 Pro Low (Antigravity)
-**Base SHA:** 9b6c7b73957ab39a1d423be7765c91e4661bab2d
-**Research SHA:** f7f72c9cd58007f61f14b8f85c86a730ee7cb518
-**Implementation SHA:** 1010f08
-**Remediation SHA:** 0b2d7c5
+
+## Commit Lineage
+- **Base SHA:** 9b6c7b73957ab39a1d423be7765c91e4661bab2d
+- **Research SHAs:** 17f498d, 1ab1519, f7f72c9
+- **Implementation/Remediation SHA:** c6cd559
+- **New Follow-up SHA:** 45607b0
+
+**Governance Defect Note:** The commits 1010f08 and intermediate remediation SHAs were erroneously amended instead of creating new atomic follow-up commits. This left them dangling and removed from the active branch history. This has been recorded as a governance defect in ERROR_LOG.md. The current branch lineage now proceeds from f7f72c9 to c6cd559 to the new follow-up commit.
 
 ## Changed Files:
 - static/index.html
@@ -23,12 +27,12 @@
 - docs/governance/ONBOARDING-SUPPORT-v1.3.1-20260912/evidence/*.png
 
 ## Exact Commands:
-- PYTHONPATH=. .venv/bin/pytest tests/test_layout_and_tooltips_e2e.py (Exit 0)
-- PYTHONPATH=. .venv/bin/pytest tests/test_onboarding_ux.py (Exit 0)
+- PYTHONPATH=. .venv/bin/pytest tests/test_layout_and_tooltips_e2e.py tests/test_onboarding_ux.py (Exit 0)
 - ./build.sh (Exit 0)
 - git diff --check 9b6c7b73957ab39a1d423be7765c91e4661bab2d..HEAD (Exit 0)
 
 ## Limitations & Assertions:
-- **No-deploy / No-install:** Verified that the candidate application was never moved to `/Applications` or pushed to the remote repository.
+- **No-deploy / No-install:** Verified that the candidate application was never moved to `/Applications` or pushed to the remote repository. The active long-call test was untouched.
 - **Quota/Failover:** Used efficient context window and safe local isolated playwright environment.
 - **Backups:** Original states maintained in git.
+

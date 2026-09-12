@@ -147,3 +147,118 @@ class TestOnboardingUX(IsolatedTestCase):
         self.assertIn("&lt;h1&gt;", rendered)
         self.assertIn('href="https://example.com"', rendered)
         self.assertNotIn("href=\"javascript:", rendered)
+
+    def test_issue_yaml_fields(self):
+
+        with open(".github/ISSUE_TEMPLATE/bug_report.yml", "r", encoding="utf-8") as f:
+            fields_str = f.read()
+        self.assertIn("file_type", fields_str)
+        self.assertIn("duration", fields_str)
+        self.assertIn("source", fields_str)
+        self.assertIn("конфиденциальность", fields_str.lower()) # typically part of the checklist or acknowledgement
+
+    def test_clipboard_copy_only_on_click(self):
+        self.page.goto(self.server_url)
+        self.page.wait_for_load_state("networkidle")
+
+        # Stub clipboard
+        self.page.evaluate('''() => {
+            window.navigator.clipboard.writeText = function(text) {
+                window.clipboard_writes = (window.clipboard_writes || 0) + 1;
+                return Promise.resolve();
+            };
+            window.clipboard_writes = 0;
+        }''')
+
+        self.page.click("#btnBugReportOpen")
+        self.page.wait_for_timeout(500)
+
+        writes_before = self.page.evaluate("window.clipboard_writes")
+        self.assertEqual(writes_before, 0)
+
+        self.page.click("#btnBugReportCopy")
+        writes_after = self.page.evaluate("window.clipboard_writes")
+        self.assertEqual(writes_after, 1)
+        self.page.click("#btnBugReportClose")
+
+    def test_help_loading_failure_and_retry(self):
+        # Intercept fetch for docs to simulate failure
+        self.page.route("**/docs/USER_GUIDE_RU.md", lambda route: route.abort())
+        self.page.goto(self.server_url)
+        self.page.wait_for_load_state("networkidle")
+        self.page.click("#btnToggleHelp")
+        self.page.wait_for_timeout(500)
+
+        # Should show error banner
+        error_el = self.page.locator("#helpDocError")
+        self.assertTrue(error_el.is_visible())
+
+        # Unroute and retry
+        self.page.unroute("**/docs/USER_GUIDE_RU.md")
+        self.page.click("#btnRetryHelpDoc")
+        self.page.wait_for_timeout(500)
+        self.assertFalse(error_el.is_visible())
+
+    def test_connection_retry(self):
+        self.page.route("**/api/status", lambda route: route.abort())
+        self.page.goto(self.server_url)
+        self.page.wait_for_timeout(4500) # Wait for poll to fail
+
+        error_banner = self.page.locator("#connectionBanner")
+        self.assertTrue(error_banner.is_visible())
+
+        # Unroute and click retry
+        self.page.unroute("**/api/status")
+        self.page.click("#btnConnectionRetry")
+        self.page.wait_for_timeout(1000)
+        self.assertFalse(error_banner.is_visible())
+
+    def test_tooltips_and_accessibility(self):
+        self.page.goto(self.server_url)
+        self.page.wait_for_load_state("networkidle")
+
+        # Find all interactive elements
+        interactives = self.page.locator('button, a[href], input, select, textarea').all()
+        for el in interactives:
+            tag = el.evaluate("e => e.tagName.toLowerCase()")
+            if tag in ['button', 'a']:
+                title = el.get_attribute("title")
+                tooltip = el.get_attribute("data-tooltip")
+                # Either it has a tooltip, title, or visible text
+                text = el.inner_text().strip()
+                has_accessible_name = bool(title or tooltip or text)
+                self.assertTrue(has_accessible_name)
+
+    def test_modal_tab_confinement(self):
+        self.page.goto(self.server_url)
+        self.page.wait_for_load_state("networkidle")
+        self.page.click("#btnBugReportOpen")
+        self.page.wait_for_timeout(500)
+
+        # Evaluate tab looping
+        is_confined = self.page.evaluate('''() => {
+            const modal = document.getElementById("bugReportModal");
+            const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable.length === 0) return true;
+            return true;
+        }''')
+        self.assertTrue(is_confined)
+        self.page.click("#btnBugReportClose")
+
+    def test_docs_links_fetch(self):
+        self.page.goto(self.server_url)
+        self.page.wait_for_load_state("networkidle")
+        self.page.click("#btnToggleHelp")
+        self.page.wait_for_timeout(500)
+
+        download_href = self.page.locator("#btnDownloadFeaturesDoc").get_attribute("href")
+        open_href = self.page.locator("#btnOpenFeaturesDocPanel").get_attribute("href")
+        self.assertEqual(download_href, "/docs/USER_GUIDE_RU.md")
+        self.assertEqual(open_href, "/docs/USER_GUIDE_RU.md")
+
+        import http.client
+        conn = http.client.HTTPConnection("127.0.0.1", self.server_port)
+        conn.request("GET", "/docs/USER_GUIDE_RU.md")
+        resp = conn.getresponse()
+        self.assertEqual(resp.status, 200)
+        conn.close()

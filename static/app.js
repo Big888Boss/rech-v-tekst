@@ -3092,9 +3092,9 @@
       if (elements.helpDocError) {
         const msg = err.name === 'AbortError' ? 'Превышено время ожидания 6 сек' : err.message;
         if (elements.helpDocErrorText) {
-          elements.helpDocErrorText.textContent = `Не удалось загрузить руководство (${msg}). Вы можете нажать «Повторить загрузку» или открыть USER_GUIDE_RU.md по ссылкам в шапке панели.`;
+          elements.helpDocErrorText.textContent = `Не удалось загрузить руководство (${msg}). Вы можете нажать «Повторить загрузку» или открыть руководство по ссылкам в шапке панели.`;
         } else {
-          elements.helpDocError.textContent = `Не удалось загрузить руководство (${msg}). Вы можете открыть или скачать USER_GUIDE_RU.md по ссылкам в шапке панели.`;
+          elements.helpDocError.textContent = `Не удалось загрузить руководство (${msg}). Вы можете открыть или скачать руководство по ссылкам в шапке панели.`;
         }
         elements.helpDocError.hidden = false;
       }

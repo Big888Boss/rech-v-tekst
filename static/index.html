@@ -69,7 +69,7 @@
               <span aria-hidden="true">🐛</span>
               <span>Сообщить об ошибке</span>
             </button>
-            <a id="btnOpenFeaturesDoc" href="/static/USER_GUIDE_RU.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полное руководство возможностей в отдельной вкладке">
+            <a id="btnOpenFeaturesDoc" href="/docs/USER_GUIDE_RU.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полное руководство возможностей в отдельной вкладке">
               <span aria-hidden="true">📖</span>
               <span>Полное руководство ↗</span>
             </a>
@@ -128,18 +128,18 @@
         <!-- Collapsible In-Page Help Panel with Embedded Full Manual -->
         <div id="helpPanel" class="help-panel" hidden>
           <div class="help-panel-header">
-            <h3 class="help-panel-title">Руководство пользователя (USER_GUIDE_RU.md)</h3>
+            <h3 class="help-panel-title">Руководство пользователя</h3>
             <div class="help-panel-actions">
-              <a id="btnDownloadFeaturesDoc" href="/static/USER_GUIDE_RU.md" class="btn btn-quiet" download="USER_GUIDE_RU.md" data-tooltip="Скачать руководство пользователя USER_GUIDE_RU.md">⬇ Скачать USER_GUIDE_RU.md</a>
-              <a id="btnOpenFeaturesDocPanel" href="/static/USER_GUIDE_RU.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полную документацию в новой вкладке">Открыть в новой вкладке ↗</a>
+              <a id="btnDownloadFeaturesDoc" href="/docs/USER_GUIDE_RU.md" class="btn btn-quiet" download="USER_GUIDE_RU.md" data-tooltip="Скачать руководство пользователя">⬇ Скачать руководство</a>
+              <a id="btnOpenFeaturesDocPanel" href="/docs/USER_GUIDE_RU.md" target="_blank" rel="noopener noreferrer" class="btn btn-quiet" data-tooltip="Открыть полную документацию в новой вкладке">Открыть руководство ↗</a>
               <button id="btnCloseHelpPanel" class="btn btn-quiet" type="button" aria-label="Свернуть справочник" data-tooltip="Свернуть панель справочника">✕ Свернуть</button>
             </div>
           </div>
           <div id="helpDocContainer" class="help-doc-container" aria-live="polite">
-            <div id="helpDocLoading" class="help-doc-status">Загрузка полного текста руководства из USER_GUIDE_RU.md...</div>
+            <div id="helpDocLoading" class="help-doc-status">Загрузка полного текста руководства...</div>
             <div id="helpDocError" class="banner banner-danger" role="alert" hidden>
               <span id="helpDocErrorText">Не удалось загрузить текст руководства. Вы можете открыть или скачать файл по ссылкам выше.</span>
-              <button id="btnRetryHelpDoc" class="btn btn-secondary btn-sm" type="button" data-tooltip="Повторить попытку загрузки руководства USER_GUIDE_RU.md">Повторить загрузку</button>
+              <button id="btnRetryHelpDoc" class="btn btn-secondary btn-sm" type="button" data-tooltip="Повторить попытку загрузки руководства">Повторить загрузку</button>
             </div>
             <div id="helpDocContent" class="help-doc-content" hidden></div>
           </div>
