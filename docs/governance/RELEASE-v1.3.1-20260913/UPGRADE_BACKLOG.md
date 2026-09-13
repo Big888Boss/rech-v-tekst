@@ -1,19 +1,19 @@
 # UPGRADE_BACKLOG
 
-This backlog captures 8 concrete product upgrades based on codebase inspection and planned goals.
+This backlog contains exactly 8 fully specified product upgrades based on codebase inspection.
 
-| Rank | Upgrade | Value / Effort | Dependencies | Risk | Acceptance Criteria | Release Grouping |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **P0** | **Crash Recovery & Checkpointing** | High Value / Med Effort | Backend processing refactor | Low | Interrupted transcription resumes from last processed chunk. No duplicated output. | v1.4.0 (Core Stability) |
-| **P0** | **Long-call Diarization & Voice Identity** | High Value / High Effort | Core diarization engine | Med (Privacy) | Can process >1hr audio files with >90% speaker consistency. UI shows progress accurately. | v1.5.0 (Feature Release) |
-| **P1** | **Quality Confidence & Timestamps** | Med Value / Med Effort | ASR model outputs | Low | Exported text includes word-level timestamps and color-coded low-confidence words. | v1.5.0 (Feature Release) |
-| **P1** | **Local Model Management** | High Value / High Effort | Settings UI, Disk I/O | Med (Storage limits) | Users can download, delete, and select different Whisper models inside the app UI. | v1.6.0 (UX & Scale) |
-| **P1** | **Automated In-App Update Mechanism** | High Value / Med Effort | GitHub Releases API, macOS permissions | Med (Security/Signing) | App notifies user of updates and can download/replace itself seamlessly (or link to ZIP). | v1.6.0 (UX & Scale) |
-| **P2** | **Export & Search** | Med Value / Low Effort | Frontend JS | Low | Users can export transcription as PDF/Word/SRT and use a search bar to highlight text. | v1.6.0 (UX & Scale) (Quick Win) |
-| **P2** | **Accessibility Improvements** | Med Value / Low Effort | HTML/CSS/ARIA | Low | App is fully navigable via keyboard. Screen readers correctly announce states (transcribing, done). | v1.6.0 (UX & Scale) (Quick Win) |
-| **P2** | **Performance & Storage Optimization** | Med Value / Med Effort | Audio conversion | Low | Temp audio files are automatically purged on success. Audio chunking optimized for RAM usage. | v1.7.0 (Performance) |
+## Top 5 Upgrades
+| Rank | Upgrade | User Value | Effort | Dependencies | Privacy / Security Risk | Acceptance Criteria | Release Grouping |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **P0** | **Crash Recovery & Checkpointing** | High | Med | Backend processing refactor | Low | Interrupted transcription resumes from last processed chunk automatically. No duplicated text output. | v1.4.0 |
+| **P0** | **Long-call Diarization & Voice Identity** | High | High | Core diarization engine (pyannote) | Med (Speaker profiling) | Can process >1hr audio files with >90% speaker consistency. UI shows accurate progress. | v1.5.0 |
+| **P1** | **Automated In-App Update Mechanism** | High | Med | GitHub Releases API, macOS permissions | Med (Arbitrary download/signing) | App notifies user of updates. 1-click download via verified GitHub release asset. | v1.6.0 |
+| **P1** | **Local Model Management** | High | High | Settings UI, Disk I/O | Med (Storage limits/Path traversal) | Users can download, delete, and switch between Whisper models directly inside the settings UI. | v1.6.0 |
+| **P1** | **Quality Confidence & Timestamps** | Med | Med | ASR model outputs | Low | Exported text includes word-level timestamps and color-coded low-confidence words. | v1.5.0 |
 
-## Notes
-- **Quick Wins:** Export & Search, Accessibility Improvements.
-- **Architectural Changes:** Crash Recovery, Local Model Management.
-- Do not implement these features until assigned a specific milestone.
+## Additional Upgrades
+| Rank | Upgrade | User Value | Effort | Dependencies | Privacy / Security Risk | Acceptance Criteria | Release Grouping |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **P2** | **Export & Search** | Med | Low | Frontend JS, Browser APIs | Low | Users can export transcription as PDF/Word/SRT and use an in-app search bar to highlight text. | v1.6.0 |
+| **P2** | **Accessibility Improvements** | Med | Low | HTML/CSS/ARIA | Low | App is fully navigable via keyboard. Screen readers correctly announce states (transcribing, done). | v1.6.0 |
+| **P2** | **Performance & Storage Optimization** | Med | Med | Audio conversion pipeline | Low | Temp audio files are automatically purged on success. Audio chunking optimized for low RAM usage. | v1.7.0 |

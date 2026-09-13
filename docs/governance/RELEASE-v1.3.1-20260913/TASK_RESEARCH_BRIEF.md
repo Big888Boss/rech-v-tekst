@@ -4,68 +4,51 @@
 Release version 1.3.1 of the macOS application ("Речь в текст") containing the new onboarding UI, user guide, and error report integration (from branch `feature/onboarding-docs-error-report-v1.3.1-20260912`), locally and on GitHub. Version 1.3.1 must be visible everywhere in the UI and metadata. 
 
 ## Measurable Acceptance Criteria
-- Version `1.3.1` is reflected everywhere user-visible (`build.spec`, UI, etc.).
-- Tests (`pytest`) and build (`build.sh`) run clean.
-- App signed/notarized status is honestly recorded (currently unsigned or ad-hoc signed locally).
-- Release notes published in Russian.
-- Output artifact checksum (SHA256) is recorded.
-- The exact reviewed lineage (`feature/onboarding-docs-error-report-v1.3.1-20260912`) is pushed to `main` without history loss.
-- A public GitHub tag/release (`v1.3.1`) is created with the `Речь в текст.app.zip` (or similar) asset uploaded.
+- Version `1.3.1` is reflected everywhere user-visible. Exact owned version files: `build.spec` (`CFBundleVersion`, `CFBundleShortVersionString`), and `.github/ISSUE_TEMPLATE/bug_report.yml`.
+- Tests run clean. Specifically: `pytest tests/test_onboarding_ux.py -v` (the 12-test UI batch) and broader suite `pytest tests/ -v --maxfail=5`. Exit criteria: Exit code 0.
+- Build (`build.sh`) runs clean.
+- App signed/notarized status is honestly recorded: The app is ad-hoc signed only and not notarized, which will trigger Gatekeeper on fresh installations.
+- Release notes published in Russian: "Версия 1.3.1. Добавлен интерфейс онбординга, документация пользователя и встроенная отправка отчетов об ошибках."
+- Release artifact name: `Rech-v-tekst-v1.3.1.zip`. Output artifact checksum (SHA256) is recorded.
+- The exact reviewed lineage is pushed to `main` without history loss.
+- A public annotated GitHub tag (`v1.3.1`) is created targeting the accepted `main` commit.
 - Public page and asset download are verified.
-- The previous installation is preserved as a rollback backup (`/Applications/Речь в текст.v1.2.backup.app`).
+- The previous installation is preserved as a rollback backup (e.g. `/Applications/Речь в текст.v1.3.0.backup.app`). No destructive `rm -rf` is used for application bundles.
 - The candidate is installed only after packaging verification.
-- The native app opens successfully, and the onboarding/upload/help/error-report UI components are verified without processing a real file.
-- The app is left running and ready for the user's test.
+- The native app opens successfully, and the UI components are verified without processing a real file.
 
 ## Current State
 - Repository: `/Users/kuznetcovpavel/max/rech-v-tekst-speaker-identity-v1_3-20260911`
 - Active branch: `feature/onboarding-docs-error-report-v1.3.1-20260912` (HEAD: `5c8c1fc61e83ab561aa3908efd4bd6fd18b0de21`)
 - Main branch is behind HEAD, so this branch can cleanly merge into it.
-- `build.spec` contains `1.3.0` metadata which needs bumping to `1.3.1`.
-- Tests run cleanly in previous step (173 tests, 0 net new failures).
-- `gh` CLI is currently not found on PATH or not installed; we'll need to use standard `git push --tags` and manual or automated GH API, or instruct the user/agent to install/use `gh`.
-- We currently ad-hoc sign or do not sign the app; notarization is not set up, which must be honestly documented.
+- `build.spec` contains `1.3.0` metadata.
+- `gh` CLI is missing. We will use existing `git` credentials to push, and the authenticated GitHub Web UI for the final release creation.
 
-## Implementation Options
+## Selected Implementation Option (Corrected)
+**Merge to main, build locally, release via standard git push and GitHub Web UI**
+- **Publishing Mechanism:** Push tag via `git push origin v1.3.1` using existing authenticated Git credentials. For the release asset and notes, the operator boundary is reached: the operator uses their already authenticated GitHub Web UI at `https://github.com/Big888Boss/rech-v-tekst/releases/new?tag=v1.3.1` to paste the Russian notes and upload the ZIP. This avoids exposing tokens or installing new tools.
 
-**Option 1: Merge to main, build locally, release via standard git push and GitHub UI**
-- **Correctness:** High. Ensures linear history.
-- **Risk:** Low. If build fails, we don't push the tag.
-- **Reversibility:** High. Tags can be deleted, local app can be uninstalled.
-- **Time:** Fast.
-- **Operations Burden:** Moderate. Requires manual or API-based release creation if `gh` CLI is missing.
-- **Quota:** Low. 
+### Order of Operations (with Rollback at each stage)
+1. **Verify clean HEAD and tests:** `pytest tests/test_onboarding_ux.py -v` and `pytest tests/ -v`. (Failure: Stop process).
+2. **Bump version & commit:** Edit `build.spec` and `.github/ISSUE_TEMPLATE/bug_report.yml`, then commit. (Failure: `git reset --hard HEAD`).
+3. **Build:** Execute `./build.sh`. (Failure: Stop process, no artifact).
+4. **Inspect bundle/version/signature:** `codesign -dv "dist/Речь в текст.app"` and `defaults read "$PWD/dist/Речь в текст.app/Contents/Info.plist" CFBundleShortVersionString`. (Failure: Fix build scripts).
+5. **Stage backup, install, and smoke test:** 
+   - Get current version: `defaults read "/Applications/Речь в текст.app/Contents/Info.plist" CFBundleShortVersionString` (Assume `1.3.0`).
+   - Swap: `mv "/Applications/Речь в текст.app" "/Applications/Речь в текст.v1.3.0.backup.app"` and `mv "dist/Речь в текст.app" "/Applications/"`.
+   - Open app and verify visually. 
+   - (Failure: `mv "/Applications/Речь в текст.app" "/Applications/Речь в текст.candidate-failed.app" && mv "/Applications/Речь в текст.v1.3.0.backup.app" "/Applications/Речь в текст.app"`).
+6. **Package/Checksum:** `ditto -c -k --keepParent "dist/Речь в текст.app" "dist/Rech-v-tekst-v1.3.1.zip"` and `shasum -a 256 "dist/Rech-v-tekst-v1.3.1.zip" > "dist/Rech-v-tekst-v1.3.1.zip.sha256"`.
+7. **Update reports:** Finalize `QUALITY_REPORT.md` and `COMPLETION_REPORT.md`.
+8. **Integrate to main:** `git checkout main && git merge feature/onboarding-docs-error-report-v1.3.1-20260912`. (Failure: `git merge --abort`).
+9. **Tag exact accepted main commit:** `git tag -a v1.3.1 -m "Release v1.3.1"`.
+10. **Push:** `git push origin main v1.3.1`. (Failure: `git tag -d v1.3.1`).
+11. **Create release & upload assets:** Hand off to operator boundary to use GitHub Web UI.
+12. **Verify public page and download.**
 
-**Option 2: Release directly from feature branch, relying on CI/CD (GitHub Actions) for build**
-- **Correctness:** Moderate. The prompt says "build locally and install", relying on CI/CD violates the local installation requirement unless we download the artifact.
-- **Risk:** Higher, relies on remote infrastructure that might not be configured for this macOS app.
-- **Reversibility:** Moderate. 
-- **Time:** Slower. 
-- **Operations Burden:** High. Requires setting up macOS runners and secrets for signing.
-- **Quota:** High.
-
-## Selected Option: Option 1
-Option 1 is selected because it strictly adheres to local build verification, local rollback, and testing before pushing the release tag, without relying on unconfigured CI/CD. 
-
-### Minimal Vertical Slice & Milestone Boundaries
-1. Update version to 1.3.1 in `build.spec`, UI, etc.
-2. Run tests.
-3. Merge `feature/onboarding-docs-error-report-v1.3.1-20260912` to `main`.
-4. Build `Речь в текст.app` locally.
-5. Create `.zip` and compute SHA256.
-6. Backup old app in `/Applications`.
-7. Install new app to `/Applications`.
-8. Tag and push `main` to GitHub.
-9. Create GitHub release (using API or user-provided `gh` tool) and upload asset.
-10. Launch app and verify UI visually.
-
-## File/Subsystem Ownership Map
-- Version Metadata: `build.spec`, `ui.py`, `static/index.html` (if version is hardcoded).
-- Build/Package scripts: `build.sh`.
-- Deployment target: `/Applications/Речь в текст.app`.
-- Remote: `origin` (GitHub).
-
-## Verification, Rollback, and Evidence Plan
-- **Verification:** Run `pytest`, `shasum -a 256`, and verify UI loads on macOS. Check GitHub releases page.
-- **Rollback:** `rm -rf "/Applications/Речь в текст.app" && mv "/Applications/Речь в текст.v1.2.backup.app" "/Applications/Речь в текст.app"`.
-- **Evidence:** Screenshots of the UI, terminal output of test and checksum, link to GitHub release.
+## File/Subsystem Ownership Map (Next Milestone)
+- **Branch:** `main`
+- **Version Sources:** `build.spec`, `.github/ISSUE_TEMPLATE/bug_report.yml`.
+- **Release Notes / Governance Artifacts:** `docs/governance/RELEASE-v1.3.1-20260913/**`.
+- **Generated Assets:** `dist/Rech-v-tekst-v1.3.1.zip` and `.sha256`. *Do not commit `dist` artifacts to the repository per policy.*
+- **Deployment target:** `/Applications/Речь в текст.app`.

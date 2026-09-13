@@ -1,24 +1,26 @@
 # QUALITY_REPORT
 
-**Milestone:** v1.3.1 Release
-**Status:** [PENDING EXECUTION]
+**Milestone:** v1.3.1 Release Research Gate
+**Status:** [RESEARCH GATE ONLY - NOT VERIFIED]
 **Quality Score:** TBD
 
+> **NOTICE:** This report reflects research-gate status only. The executor cannot assign final release acceptance. Missing evidence is marked as NOT VERIFIED.
+
 ## Metrics
-- **Acceptance-Criteria Coverage:** PENDING
-- **Implementation Completeness:** PENDING
-- **Automated Tests:** PENDING
-- **Runtime/UI Evidence:** PENDING
-- **Regressions:** PENDING
-- **Security & Data-Safety:** PENDING
-- **Documentation / Operability:** PENDING
-- **Maintainability:** PENDING
-- **Reviewer Independence:** PENDING
-- **Unresolved Defects:** 0
-- **Rollback Readiness:** PENDING
+- **Acceptance-Criteria Coverage:** NOT VERIFIED
+- **Implementation Completeness:** NOT VERIFIED
+- **Automated Tests:** NOT VERIFIED
+- **Runtime/UI Evidence:** NOT VERIFIED
+- **Regressions:** NOT VERIFIED
+- **Security & Data-Safety:** NOT VERIFIED
+- **Documentation / Operability:** NOT VERIFIED
+- **Maintainability:** NOT VERIFIED
+- **Reviewer Independence:** NOT VERIFIED
+- **Unresolved Defects:** NOT VERIFIED
+- **Rollback Readiness:** NOT VERIFIED
 
 ## Executor Self-Report
-(To be filled after execution)
+(To be filled after implementation execution)
 
 ## Independent Reviewer Verdict
-(To be filled after execution)
+(To be filled after implementation execution)
