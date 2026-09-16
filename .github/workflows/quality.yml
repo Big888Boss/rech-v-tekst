@@ -1,0 +1,44 @@
+name: quality
+
+on:
+  push:
+    branches: [main, 'quality/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install app requirements and lint
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements-macos.txt ruff==0.16.7
+      - name: Core regression tests
+        run: .venv/bin/python -m unittest tests.test_queue_and_admission tests.test_intro_parser tests.test_storage_security -v
+      - name: Lint syntax baseline
+        run: .venv/bin/ruff check --no-cache --select E9 recorder tests ui.py macos_app.py
+      - name: Python compilation
+        run: .venv/bin/python -m compileall -q recorder tests ui.py macos_app.py
+      - name: Build and packaged runtime smoke
+        run: .venv/bin/python packaged_smoke_test.py
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan (static, no credential verification)
+        uses: trufflesecurity/trufflehog@166bf18f3a3fe52a6db9e1770568f52a0c40ff07
+        with:
+          extra_args: --no-verification --results=unverified --fail-on-scan-errors
