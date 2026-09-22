@@ -23,7 +23,7 @@ jobs:
           python -m venv .venv
           .venv/bin/python -m pip install -r requirements-macos.txt ruff==0.16.7
       - name: Core regression tests
-        run: .venv/bin/python -m unittest tests.test_queue_and_admission tests.test_intro_parser tests.test_storage_security -v
+        run: .venv/bin/python -m unittest tests.test_packaged_smoke_test tests.test_queue_and_admission tests.test_intro_parser tests.test_storage_security -v
       - name: Lint syntax baseline
         run: .venv/bin/ruff check --no-cache --select E9 recorder tests ui.py macos_app.py
       - name: Python compilation

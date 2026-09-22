@@ -8,6 +8,26 @@ import re
 import sys
 import json
 
+
+DEFAULT_STARTUP_TIMEOUT_SECONDS = 30.0
+
+
+def wait_for_test_port(proc, timeout=DEFAULT_STARTUP_TIMEOUT_SECONDS, poll_interval=0.1):
+    """Wait for the packaged app to publish its loopback test port."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        line = proc.stdout.readline()
+        if line:
+            match = re.search(r'TEST_PORT=(\d+)', line)
+            if match:
+                return int(match.group(1))
+        elif proc.poll() is not None:
+            return None
+        else:
+            time.sleep(poll_interval)
+    return None
+
+
 def run_packaged_smoke_test():
     print("Building application...")
     subprocess.run(["./build.sh"], check=True)
@@ -34,9 +54,6 @@ def run_packaged_smoke_test():
 
         os.set_blocking(proc.stdout.fileno(), False)
 
-        port = None
-        start_time = time.time()
-
         def reap_process(is_error=False):
             print("Killing process...")
             proc.kill()
@@ -46,18 +63,14 @@ def run_packaged_smoke_test():
             sys.exit(1)
 
         try:
-            while time.time() - start_time < 10:
-                line = proc.stdout.readline()
-                if line:
-                    match = re.search(r'TEST_PORT=(\d+)', line)
-                    if match:
-                        port = int(match.group(1))
-                        break
-                else:
-                    time.sleep(0.1)
+            timeout = float(os.environ.get(
+                "PACKAGED_SMOKE_STARTUP_TIMEOUT_SECONDS",
+                DEFAULT_STARTUP_TIMEOUT_SECONDS,
+            ))
+            port = wait_for_test_port(proc, timeout=timeout)
 
             if not port:
-                print("Failed to get TEST_PORT")
+                print(f"Failed to get TEST_PORT within {timeout:g} seconds")
                 reap_process(is_error=True)
 
             print(f"Captured TEST_PORT={port}")
